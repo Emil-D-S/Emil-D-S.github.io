@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Three.js Loader</title>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.161.0/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module">
+      const params = new URLSearchParams(window.location.search);
+      let folder = decodeURIComponent(params.get("folder") || "");
+      if (!folder) {
+        document.body.innerHTML = "<p>Error: folder not specified</p>";
+        throw new Error("No folder specified");
+      }
+      folder = folder.replace(/^\/+/, "");
+      // Resolve "../" from /templates/ to the site root, then into /projects/...
+      const s = document.createElement("script");
+      s.type = "module";
+      s.src = new URL(`../${folder}/sketch.js`, import.meta.url).href;
+      s.onload = () => console.log("Loaded:", s.src);
+      s.onerror = () => {
+        const msg = `Failed to load ${s.src}`;
+        console.error(msg);
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          `<p style="color:red">${msg}</p>`
+        );
+      };
+      document.body.appendChild(s);
+      // Canvas size reporting
+      function sendCanvasSize() {
+        const canvas = document.querySelector("canvas");
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        parent.postMessage(
+          { type: "canvasSize", width: rect.width, height: rect.height },
+          "*"
+        );
+      }
+      const observer = new MutationObserver(() => {
+        const canvas = document.querySelector("canvas");
+        if (canvas) {
+          sendCanvasSize();
+          window.addEventListener("resize", sendCanvasSize);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    </script>
+  </body>
+</html>

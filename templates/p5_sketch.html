@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>p5.js Project Loader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  </head>
+  <body>
+    <script>
+      // --- Get project folder from URL ---
+      const params = new URLSearchParams(window.location.search);
+      const folder = params.get("folder");
+      if (!folder) {
+        document.body.innerHTML = "<p>Error: No folder specified in URL</p>";
+        throw new Error("No folder specified");
+      }
+
+      // --- List of JS files to load ---
+      // You can add more files here if needed
+      const files = ["sketch.js"];
+
+      async function loadFiles() {
+        for (const f of files) {
+          const script = document.createElement("script");
+
+          // Make path relative to the site root
+          script.src = `/${folder}/${f}`; // <-- note the leading slash
+          script.defer = true;
+          document.body.appendChild(script);
+          await new Promise((res, rej) => {
+            script.onload = res;
+            script.onerror = () => rej(new Error("Failed to load " + f));
+          });
+        }
+      }
+
+      // --- Send canvas size to parent for iframe resizing ---
+      function sendCanvasSize() {
+        const canvas = document.querySelector("canvas");
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        parent.postMessage(
+          { type: "canvasSize", width: rect.width, height: rect.height },
+          "*"
+        );
+      }
+
+      // --- Wait for p5.js canvas ---
+      const observer = new MutationObserver(() => {
+        const canvas = document.querySelector("canvas");
+        if (canvas) {
+          sendCanvasSize();
+          window.addEventListener("resize", sendCanvasSize);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // --- Load all files and start ---
+      loadFiles().catch((err) => {
+        console.error("Failed to load project files:", err);
+        document.body.innerHTML = `<p>Failed to load project files: ${err}</p>`;
+      });
+    </script>
+  </body>
+</html>

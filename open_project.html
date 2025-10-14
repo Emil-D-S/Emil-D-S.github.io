@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Portfolio</title>
+    <meta
+      name="description"
+      content="Personal portfolio of Emil Daniel Slabý"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <!-- Open Sans and Braah One -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Braah+One&family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body data-page="open_project">
+    <div id="header"></div>
+
+    <main class="content">
+      <div id="projectContentWrapper">
+        <h2 id="projectTitle"></h2>
+        <div id="projectHeader">
+          <p id="projectDesc"></p>
+          <div class="button-group">
+            <button id="startBtn">Start/Restart</button>
+            <button id="stopBtn">Stop</button>
+          </div>
+        </div>
+        <hr class="solid" />
+        <div class="project-frame-row">
+          <div class="vertical-button-bar">
+            <button id="copyScreenshotToClipboardButton">
+              <i class="fa-regular fa-clone"></i>
+            </button>
+            <button id="downloadScreenshotButton">
+              <i class="fa-solid fa-image"></i>
+            </button>
+          </div>
+          <iframe
+            id="projectFrame"
+            src=""
+            frameborder="0"
+            style="height: 600px"
+          ></iframe>
+        </div>
+      </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="assets/js/open_project.js"></script>
+    <script src="assets/js/include.js"></script>
+  </body>
+</html>

@@ -1,0 +1,470 @@
+/* =========================================
+   VARIABLES
+========================================= */
+:root {
+  --bg: #0a100d;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --text: #d6d5c9;
+  --accent: #fff;
+}
+
+/* =========================================
+   RESET & BASE
+========================================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Space Grotesk", "Braah One", "Open Sans", ui-sans-serif,
+    system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 20px;
+}
+
+/* =========================================
+   LINKS
+========================================= */
+
+a:link,
+a:visited {
+  color: var(--text);
+}
+
+a:hover,
+a:active {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a {
+  text-decoration: none;
+  transition: color 0.2s, text-decoration-color 0.2s;
+}
+
+a:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* =========================================
+   NAVBAR
+========================================= */
+
+body:is([data-page="open_project"]) #header {
+  min-height: auto !important;
+  width: 100%;
+}
+
+#header {
+  min-height: 125px; /* reserve space for navbar */
+  width: 100%;
+}
+
+nav {
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navsect {
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 2rem;
+}
+
+#nv1 {
+  flex: 3;
+}
+
+#nv2 {
+  flex: 3;
+}
+
+#nv3 {
+  flex: 1;
+}
+
+nav a {
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+nav a:hover,
+nav i:hover {
+  color: var(--accent);
+}
+
+nav i {
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+/* Make navbar smaller only on open_project.html */
+
+/* body:is([data-page="open_project"]) #header, */
+/* body:is([data-page="open_project"]) nav, */
+body:is([data-page="open_project"]) .navsect {
+  min-height: 48px !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 1rem !important;
+}
+
+/* =========================================
+   MAIN CONTENT AREA
+========================================= */
+main.content {
+  flex: 1;
+  overflow-y: scroll; /* always reserves scrollbar space */
+  padding: 1rem;
+}
+
+/* ---- Scrollbar styling ---- */
+main.content::-webkit-scrollbar {
+  width: 8px; /* scrollbar space reserved */
+}
+
+main.content::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 4px;
+  opacity: 0; /* invisible when not scrolling */
+  transition: opacity 0.2s;
+}
+
+main.content:hover::-webkit-scrollbar-thumb,
+main.content:active::-webkit-scrollbar-thumb {
+  opacity: 1; /* visible on hover or scroll */
+}
+
+/* Firefox scrollbar */
+main.content {
+  scrollbar-width: thin; /* reserves space */
+  scrollbar-color: var(--accent) transparent;
+}
+
+/* =========================================
+   TILE (WELCOME BOX)
+========================================= */
+.tile {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* =========================================
+   PROJECTS SECTION
+========================================= */
+#projects {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* consistent vertical spacing */
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#projects hr {
+  margin: 0; /* remove default browser margin */
+}
+
+#projectGrid {
+  margin: 0; /* remove any top/bottom spacing */
+}
+
+/* img.projectPreviewImg {
+  aspect-ratio: 16 / 9; fixed ratio
+  object-fit: cover;
+} */
+
+/* =========================================
+   VIEW TOGGLE BUTTONS
+========================================= */
+.view-toggle {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.view-toggle i {
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--accent);
+  transition: color 0.2s, transform 0.2s;
+}
+
+.view-toggle i.active {
+  color: #fff;
+  transform: scale(1.2);
+}
+
+/* =========================================
+   PROJECT GRID (CARD & LIST VIEWS)
+========================================= */
+
+/* základ */
+.project .img-link {
+  display: block;
+  line-height: 0;
+}
+.project .img-link img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 200ms ease, filter 200ms ease;
+}
+
+/* podtrhni titulek, když je hover na OBRÁZKU */
+.project:has(.img-link:hover) .projectInfo a {
+  text-decoration: underline;
+}
+
+/* zvýrazni obrázek, když je hover na ODKAZU v titulku */
+.project:has(.projectInfo a:hover) .img-link img {
+  transform: scale(1.04);
+  filter: brightness(1.03);
+}
+
+/* běžné hover efekty (každý sám za sebe) */
+.project .projectInfo a:hover {
+  text-decoration: underline;
+}
+.project .img-link:hover img {
+  transform: scale(1.04);
+  filter: brightness(1.03);
+}
+
+/* přidej i klávesovou navigaci */
+.project:has(.img-link:focus-visible) .projectInfo a {
+  text-decoration: underline;
+}
+.project:has(.projectInfo a:focus-visible) .img-link img {
+  transform: scale(1.04);
+}
+
+/* CARD VIEW: mřížka s max šířkou 200 px na kartu, vlevo */
+#projectGrid.card {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(0, 300px));
+  gap: 0.5rem;
+  justify-items: start;
+  justify-content: start;
+}
+
+#projectGrid.card .project {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 300px; /* limit jen pro card view */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* LIST VIEW: horizontální řádek bez šířkového limitu na kartu */
+#projectGrid.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#projectGrid.list .project {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  width: 100%;
+  max-width: none; /* zruší globální limity */
+}
+
+#projectGrid.list .project img {
+  width: 160px;
+  aspect-ratio: 16 / 9;
+  height: auto; /* ne height:100% */
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+#projectGrid.list .project .projectInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* vyplní zbytek řádku */
+  min-width: 0; /* dovolí zabalit/ellipsis text */
+}
+
+/* Obrázek v card view */
+#projectGrid.card .project img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+#projectGrid.card .project img:hover {
+  filter: brightness(1.2);
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+
+/* =========================================
+   PROJECT TEXT
+========================================= */
+
+.project a h3 {
+  display: inline;
+  margin: 0;
+}
+
+/* =========================================
+   PROJECT FRAME
+========================================= */
+
+#projectFrame {
+  display: block; /* remove inline spacing */
+  border: 1px solid var(--border-color);
+  margin: 0; /* remove extra space around iframe */
+}
+
+/* =========================================
+   PROJECT HEADER
+========================================= */
+
+#projectHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+}
+
+#projectHeader p {
+  margin: 0;
+  flex: 1;
+}
+
+#projectHeader .button-group {
+  display: flex;
+  gap: 10px;
+}
+
+/* ========================================
+   BUTTONS
+========================================= */
+
+button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+/* =========================================
+   DIVIDERS
+========================================= */
+hr.solid {
+  border: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+hr.dashed {
+  border: 0;
+  border-top: 3px dashed var(--border-color);
+}
+
+hr.dotted {
+  border: 0;
+  border-top: 3px dotted var(--border-color);
+}
+
+hr.rounded {
+  border: 0;
+  border-top: 8px solid var(--border-color);
+  border-radius: 5px;
+}
+
+#projectContentWrapper {
+  margin: 0; /* center */
+}
+
+/* =========================================
+   P5.JS CANVAS STYLING
+========================================= */
+
+/* Make p5.js canvas flush with parent container */
+
+canvas {
+  display: block;
+  margin: 10px; /* pushes canvas inward from border */
+  background: #fff;
+  border: 1px solid var(--border-color);
+}
+
+/* Ensure main and body have no extra spacing */
+/* body,
+html,
+main.content {
+  margin: 0;
+  padding: 0;
+} */
+
+.project-frame-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.vertical-button-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "title": "JS Clock",
+    "desc": "3D clock using Three.js library",
+    "folder": "projects/js-clock",
+    "type": "three",
+    "files": ["sketch.js"],
+    "image": "projects/js-clock/preview.png"
+  },
+  {
+    "title": "Particle Attractor",
+    "desc": "Simple particle gravity simulation using p5.js library",
+    "folder": "projects/particle_attractor",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/particle_attractor/preview.png"
+  },
+  {
+    "title": "Scara robot simulation",
+    "desc": "Simple inverse kinematics of Scara robot",
+    "folder": "projects/turf-war",
+    "type": "three",
+    "files": ["sketch.js"],
+    "image": "projects/turf-war/preview.png"
+  }
+]

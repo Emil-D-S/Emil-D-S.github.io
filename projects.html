@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Portfolio</title>
+    <meta
+      name="description"
+      content="Personal portfolio of Emil Daniel Slabý"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <!-- Open Sans and Braah One -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Braah+One&family=Open+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <div id="header"></div>
+    <main class="content">
+      <div class="tile">
+        <h2>Welcome</h2>
+        <p>Hovna prdele něco asi nevim.</p>
+      </div>
+      <section id="projects">
+        <div class="header-row">
+          <h2>Projects</h2>
+          <div class="view-toggle">
+            <i id="listView" class="fa-solid fa-list-ul"></i>
+            <i id="cardView" class="fa-solid fa-table-cells-large"></i>
+          </div>
+        </div>
+        <hr class="solid" />
+        <div class="project-grid card" id="projectGrid"></div>
+        <hr class="solid" id="main-divider" />
+      </section>
+    </main>
+
+    <div id="footer"></div>
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/include.js"></script>
+  </body>
+</html>
