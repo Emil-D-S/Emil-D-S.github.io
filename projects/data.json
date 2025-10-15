@@ -16,6 +16,14 @@
     "image": "projects/particle_attractor/preview.png"
   },
   {
+    "title": "Linear transformation visualization",
+    "desc": "",
+    "folder": "projects/lin-alg-transform-visualization",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/lin-alg-transform-visualization/preview.png"
+  },
+  {
     "title": "Scara robot simulation",
     "desc": "Simple inverse kinematics of Scara robot",
     "folder": "projects/turf-war",

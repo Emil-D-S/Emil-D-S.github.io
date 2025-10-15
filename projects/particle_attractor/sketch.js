@@ -31,11 +31,18 @@ class Particle {
         let rSq = d.copy().magSq(); // avoid extreme forces
         rSq = max(sqrt(rSq), 0);
         d.normalize();
-        let G = 100;
-        let force = d.mult((G * this.mass * other.mass) / (rSq * 1000));
+        let G = 10;
+        let force = d.mult((G * this.mass * other.mass) / (rSq * 10));
         this.applyForce(force);
       }
     }
+  }
+
+  edgeCheck(eff = 0.95) {
+    if (this.pos.x < 0) this.vel = this.vel.mult(-1 * eff, 1);
+    if (this.pos.x > width) this.vel = this.vel.mult(-1 * eff, 1);
+    if (this.pos.y < 0) this.vel = this.vel.mult(1, -1 * eff);
+    if (this.pos.y > height) this.vel = this.vel.mult(1, -1 * eff);
   }
 
   show() {
@@ -54,8 +61,13 @@ let particles = [];
 
 let numberOfParticles = 20;
 
+let textfield;
+
 function setup() {
   createCanvas(1000, 600); // creates canvas automatically
+
+  textfield = createInput();
+  textfield.position(20, 600);
 
   for (let i = 0; i < numberOfParticles; i++) {
     let p = new Particle(
@@ -74,16 +86,18 @@ function draw() {
   if (mouseIsPressed) {
     for (let p of particles) {
       let d = p5.Vector.sub(createVector(mouseX, mouseY), p.pos);
-      r_2 = d.copy().magSq() * 10; // avoid extreme forces
+      let rSq = d.copy().magSq() * 10; // avoid extreme forces
+      rSq = max(sqrt(rSq), 5);
       d.normalize();
       let G = 100;
-      force = d.mult((G * p.mass) / r_2);
+      force = d.mult((G * p.mass) / rSq);
       p.applyForce(force);
     }
   }
 
   for (let p of particles) {
     p.applyForceOfParticles(particles);
+    // p.edgeCheck();
     p.update();
     p.show();
   }

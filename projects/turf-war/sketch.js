@@ -273,10 +273,10 @@ const J2_MAX_ACC = 12.0;
 const J2_MAX_VEL = 5.0;
 
 // PD gains (critically damped-ish: kd ≈ 2*sqrt(kp))
-const J1_KP = 40.0,
-  J1_KD = 2 * Math.sqrt(J1_KP);
-const J2_KP = 50.0,
-  J2_KD = 2 * Math.sqrt(J2_KP);
+const J1_KP = 40.0;
+const J1_KD = 2 * Math.sqrt(J1_KP);
+const J2_KP = 50.0;
+const J2_KD = 2 * Math.sqrt(J2_KP);
 
 function shortestAngleErr(target, current) {
   return Math.atan2(Math.sin(target - current), Math.cos(target - current));

@@ -37,6 +37,7 @@ nav.nav-zoom {
 /* =========================================
    RESET & BASE
 ========================================= */
+
 * {
   margin: 0;
   padding: 0;
@@ -231,9 +232,9 @@ main.content {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 2rem;
+  padding: 1rem;
   max-width: 800px;
-  margin: 0 auto;
+  margin: 0 auto 1rem auto; /* center and space below */
 }
 
 /* =========================================

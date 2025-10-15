@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ------------------------
   window.addEventListener("message", (e) => {
     if (e.data?.type === "canvasSize" && iframe) {
-      const padding = 24; // px extra
+      const padding = 0; // px extra
       iframe.style.width = e.data.width + padding + "px";
       iframe.style.height = e.data.height + padding + "px";
     }
