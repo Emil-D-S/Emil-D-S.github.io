@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Portfolio</title>
-    <meta
-      name="description"
-      content="Personal portfolio of Emil Daniel Slabý"
-    />
+    <meta name="description" content="Personal portfolio of Emil D. S." />
+    <meta http-equiv="refresh" content="0; url=projects.html" />
     <!-- Font Awesome -->
     <link
       rel="stylesheet"
@@ -32,12 +30,44 @@
     <main class="content">
       <div class="tile">
         <h2>Welcome</h2>
-        <p>Hovna prdele něco asi nevim.</p>
+        <p>
+          If you are not redirected automatically,
+          <a href="projects.html">click here</a>.
+        </p>
       </div>
     </main>
 
     <div id="footer"></div>
     <script src="assets/js/main.js"></script>
     <script src="assets/js/include.js"></script>
+    <script>
+      const DESIGN = 650;
+      const nav = document.getElementById("navbar");
+      const inner = nav.querySelector(".nav-inner");
+      const content = nav.querySelector(".nav-content");
+
+      function autoScaleNav() {
+        content.style.transform = "none";
+        nav.style.height = "auto";
+
+        const cw = inner.clientWidth; // dostupná šířka (100%)
+        const naturalW = content.scrollWidth; // potřebná šířka obsahu
+        const naturalH = content.getBoundingClientRect().height;
+
+        let scale = 1;
+        if (cw < DESIGN) {
+          const fitByDesign = cw / DESIGN;
+          const fitByContent = cw / naturalW;
+          scale = Math.min(1, fitByDesign, fitByContent);
+        }
+
+        content.style.transform = `scale(${scale})`;
+        nav.style.height = `${naturalH * scale}px`;
+      }
+
+      addEventListener("load", autoScaleNav, { passive: true });
+      addEventListener("resize", autoScaleNav, { passive: true });
+      new ResizeObserver(autoScaleNav).observe(content);
+    </script>
   </body>
 </html>

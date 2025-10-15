@@ -6,6 +6,32 @@
   --border-color: rgba(255, 255, 255, 0.1);
   --text: #d6d5c9;
   --accent: #fff;
+
+  /* --page-max: 1200px; uprav podle sebe */
+  /* --page-pad: 16px; boční padding na mobilu */
+}
+
+/* stejné pro header, main i footer */
+:where(header, main, footer) {
+  width: min(100% - 2 * var(--page-pad), var(--page-max));
+  margin-inline: auto; /* vycentruje */
+}
+
+/* =========================================
+   NAVBAR SCALING
+========================================= */
+
+/* rodič navbaru */
+nav.nav-zoom {
+  display: flex; /* aby děti mohly růst */
+  overflow: hidden;
+  width: 100%;
+}
+
+/* vyplň celou šířku .nav-zoom */
+.nav-inner {
+  display: inline-flex;
+  width: 100%;
 }
 
 /* =========================================
@@ -20,6 +46,7 @@
 html,
 body {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -77,6 +104,12 @@ body:is([data-page="open_project"]) #header {
   width: 100%;
 }
 
+@media (max-width: 600px) {
+  #header {
+    min-height: auto; /* smaller on small screens */
+  }
+}
+
 nav {
   display: flex;
   width: 100%;
@@ -92,6 +125,18 @@ nav {
   padding: 3rem 2rem;
 }
 
+@media (max-width: 600px) {
+  .navsect {
+    padding: 0.75rem 1rem;
+  } /* menší na úzkých displejích */
+}
+
+@media (max-width: 480px) {
+  .navsect {
+    gap: 0.5rem;
+  } /* menší na úzkých displejích */
+}
+
 #nv1 {
   flex: 3;
 }
@@ -100,8 +145,24 @@ nav {
   flex: 3;
 }
 
+/* @media (max-width: 450px) {
+  #nv1 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  #nv1 a {
+    display: block;
+  } 
+} */
+
 #nv3 {
   flex: 1;
+}
+
+@media (max-width: 450px) {
+  #nv3 {
+    display: none;
+  } /* schovej na malých displejích */
 }
 
 nav a {
@@ -197,6 +258,7 @@ main.content {
 
 #projectGrid {
   margin: 0; /* remove any top/bottom spacing */
+  width: 100%;
 }
 
 /* img.projectPreviewImg {
@@ -275,8 +337,8 @@ main.content {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(0, 300px));
   gap: 0.5rem;
-  justify-items: start;
-  justify-content: start;
+  justify-items: center;
+  justify-content: center;
 }
 
 #projectGrid.card .project {
