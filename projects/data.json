@@ -16,12 +16,41 @@
     "image": "projects/particle_attractor/preview.png"
   },
   {
+    "title": "Desmos – Redirect",
+    "desc": "Opens the Desmos share link directly",
+    "type": "desmos",
+    "folder": "projects/desmos_redirect",
+    "image": "projects/desmos_redirect/preview.png",
+    "desmos": {
+      "mode": "redirect",
+      "url": "https://www.desmos.com/calculator/7b38a5637b",
+      "target": "_blank" 
+    }
+  },
+  {
+    "title": "Discrete Fourier transform",
+    "desc": "Draw a function and view its approximation via Fourier transform",
+    "url": "inverse-fourier",
+    "folder": "projects/inverse-fourier",
+    "type": "p5",
+    "files": ["dft.js", "functionGrapher.js", "sketch.js"],
+    "image": "projects/inverse-fourier/preview.png"
+  },
+  {
     "title": "Linear transformation visualization",
     "desc": "",
     "folder": "projects/lin-alg-transform-visualization",
     "type": "p5",
     "files": ["sketch.js"],
     "image": "projects/lin-alg-transform-visualization/preview.png"
+  },
+  {
+    "title": "Pool prediction simulator",
+    "desc": "",
+    "folder": "projects/ball-collision-prediction",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/ball-collision-prediction/preview.png"
   },
   {
     "title": "Scara robot simulation",

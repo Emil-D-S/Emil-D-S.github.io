@@ -17,6 +17,121 @@
   margin-inline: auto; /* vycentruje */
 }
 
+/* ========= DESMOS FULL-SCREEN MODE ========= */
+/* Turn the page into a flex column only for Desmos */
+body.compact-desmos {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden; /* no outer scrollbars */
+}
+
+/* Make main a flex container that can grow to fill the viewport */
+body.compact-desmos main.content {
+  flex: 1 1 auto;
+  min-height: 0; /* critical: allow children to grow */
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* tighter while in compact mode */
+  overflow: hidden; /* prevent internal scroll here */
+}
+
+/* Ensure the row/wrapper that holds the iframe is flexible */
+body.compact-desmos .project-frame-row,
+body.compact-desmos #projectContentWrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex; /* so the iframe can flex */
+  flex-direction: column;
+  margin-top: 0; /* remove extra spacing */
+}
+
+/* The iframe itself: now 100% height works */
+body.compact-desmos #projectFrame {
+  width: 100%;
+  height: 100%;
+  border: 0; /* cleaner look for embeds */
+  display: block;
+}
+
+/* Optional: remove max-width gutters for true edge-to-edge */
+body.compact-desmos :where(header, main, footer) {
+  width: 100%;
+  margin-inline: 0;
+}
+
+/* =====
+DESMOS SCALING
+=====*/
+
+/* Compact UI when viewing a Desmos project */
+body.compact-desmos .content {
+  padding-top: 0px;
+}
+
+body.compact-desmos main.content {
+  gap: 0px;
+  margin: 0px;
+  padding: 0px;
+}
+
+/* Hide controls */
+body.compact-desmos #startBtn,
+body.compact-desmos #stopBtn,
+body.compact-desmos #copyScreenshotToClipboardButton,
+body.compact-desmos #downloadScreenshotButton {
+  display: none !important;
+}
+
+body.compact-desmos #projectTitle,
+body.compact-desmos #projectDesc {
+  display: none !important;
+}
+
+body.compact-desmos footer {
+  display: none !important;
+}
+
+body.compact-desmos .project-frame-row {
+  margin: 0px;
+  gap: 0rem;
+  display: block;
+  /* display: flex;
+  flex-direction: row;
+  align-items: flex-start; */
+}
+
+/* Title + description inline, single row, with ellipsis */
+body.compact-desmos #projectTitle,
+body.compact-desmos #projectDesc {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.5rem 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Give both a sensible width so they share one line */
+body.compact-desmos #projectTitle {
+  max-width: 35vw;
+  font-weight: 600;
+}
+body.compact-desmos #projectDesc {
+  max-width: 55vw;
+  opacity: 0.8;
+}
+
+/* If your layout is narrower, let them wrap under 600px */
+@media (max-width: 600px) {
+  body.compact-desmos #projectTitle,
+  body.compact-desmos #projectDesc {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+}
+
 /* =========================================
    NAVBAR SCALING
 ========================================= */
@@ -296,6 +411,7 @@ main.content {
 .project .img-link {
   display: block;
   line-height: 0;
+  image-rendering: crisp-edges;
 }
 .project .img-link img {
   width: 100%;

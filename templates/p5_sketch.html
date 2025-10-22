@@ -7,25 +7,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
   </head>
   <body style="margin: 0; overflow: hidden">
-    <script>
-      // --- Get project folder from URL ---
+    <script type="module">
       const params = new URLSearchParams(window.location.search);
       const folder = params.get("folder");
       if (!folder) {
-        document.body.innerHTML = "<p>Error: No folder specified in URL</p>";
-        throw new Error("No folder specified");
+        /* ... */
       }
 
-      // --- List of JS files to load ---
-      // You can add more files here if needed
-      const files = ["sketch.js"];
+      let files = ["sketch.js"]; // fallback
+      try {
+        const res = await fetch(
+          new URL("../projects/data.json", window.location.href)
+        );
+        const list = await res.json();
+        const proj = Array.isArray(list)
+          ? list.find((p) => p.folder === folder)
+          : null;
+        if (proj && Array.isArray(proj.files) && proj.files.length) {
+          files = proj.files.slice(); // use order from data.json
+        }
+      } catch (e) {
+        console.warn("Could not load data.json; using default files list:", e);
+      }
 
       async function loadFiles() {
         for (const f of files) {
           const script = document.createElement("script");
-
-          // Make path relative to the site root
-          script.src = `/${folder}/${f}`; // <-- note the leading slash
+          script.src = `../${folder}/${f}`; // ← no leading slash
           script.defer = true;
           document.body.appendChild(script);
           await new Promise((res, rej) => {
@@ -41,7 +49,7 @@
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
         parent.postMessage(
-          { type: "canvasSize", width: rect.width, height: rect.height },
+          { type: "canvasSize", width: rect.width, height: rect.height + 50 },
           "*"
         );
       }

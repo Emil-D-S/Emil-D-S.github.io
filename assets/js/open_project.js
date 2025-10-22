@@ -5,6 +5,31 @@ function getQueryParam(name) {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get(name);
 }
+function getAllQueryParams(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.getAll(name);
+}
+function hasQueryParam(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.has(name);
+}
+
+// Build a query string forwarding selected params (used for Desmos)
+function buildForwardedQuery(whitelist = []) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const out = new URLSearchParams();
+  for (const key of whitelist) {
+    if (!urlParams.has(key)) continue;
+    if (key === "add") {
+      // forward all occurrences
+      for (const v of urlParams.getAll("add")) out.append("add", v);
+    } else {
+      out.set(key, urlParams.get(key));
+    }
+  }
+  const s = out.toString();
+  return s ? `&${s}` : "";
+}
 
 // ------------------------
 // Main
@@ -47,19 +72,109 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Update title/description
-    document.getElementById("projectTitle").textContent = project.title;
-    document.getElementById("projectDesc").textContent = project.desc;
+    document
+      .getElementById("projectTitle")
+      ?.replaceChildren(project.title || "");
+    document.getElementById("projectDesc")?.replaceChildren(project.desc || "");
 
     currentProject = project;
+    setIframeForProject(project);
+  }
 
-    // Set iframe src based on type
-    if (project.type === "html") {
-      iframe.src = `${project.folder}/${project.files[0]}`;
-    } else if (project.type === "p5" || project.type === "three") {
-      iframe.src = `templates/${
-        project.type
-      }_sketch.html?folder=${encodeURIComponent(project.folder)}`;
+  function setCompactMode(enabled) {
+    document.body.classList.toggle("compact-desmos", !!enabled);
+  }
+
+  function setCompactMode(enabled) {
+    document.body.classList.toggle("compact-desmos", !!enabled);
+  }
+
+  /* Call this at the end of setIframeForProject(project) */
+  function setIframeForProject(project) {
+    if (!iframe) return;
+
+    // Detect desired mode
+    const urlParams = new URLSearchParams(location.search);
+    const overrideMode = urlParams.get("desmosMode"); // optional override
+    const overrideTarget = urlParams.get("desmosTarget");
+
+    const isLegacyExternal = project.type === "desmos_external";
+    const cfg = project.desmos || {};
+    const mode = (
+      overrideMode ||
+      cfg.mode ||
+      (isLegacyExternal ? "external" : "api")
+    ).toLowerCase();
+
+    const isDesmos = project.type === "desmos" || isLegacyExternal;
+
+    // Common: update title/desc already done elsewhere…
+
+    // Route by type/mode
+    if (!isDesmos) {
+      // your non-Desmos logic
+      if (project.type === "html") {
+        iframe.src = `${project.folder}/${project.files?.[0] || "index.html"}`;
+      } else if (project.type === "p5" || project.type === "three") {
+        iframe.src = `templates/${
+          project.type
+        }_sketch.html?folder=${encodeURIComponent(project.folder)}`;
+      } else {
+        iframe.src = `${project.folder}/${project.files?.[0] || "index.html"}`;
+      }
+      document.body.classList.remove("compact-desmos");
+      return;
     }
+
+    // Desmos modes
+    if (mode === "redirect") {
+      const url = cfg.url || project.external?.url;
+      if (!url) {
+        console.error("Desmos redirect mode requires desmos.url");
+        return;
+      }
+      const target = (overrideTarget || cfg.target || "_self").toLowerCase();
+
+      if (target === "_blank") {
+        // New tab, safe from opener leaks
+        window.open(url, "_blank", "noopener,noreferrer");
+      } else {
+        // Same tab (default)
+        window.location.href = url;
+      }
+      return;
+    }
+
+    if (mode === "api") {
+      // Local embed (same-origin)
+      const forwarded = ""; // (optional) if you forward URL params to the embed
+      iframe.src = `templates/desmos_sketch.html?folder=${encodeURIComponent(
+        project.folder
+      )}${forwarded}`;
+      iframe.removeAttribute("style"); // CSS handles sizing
+      iframe.removeAttribute("class");
+      document.body.classList.add("compact-desmos");
+      return;
+    }
+
+    if (mode === "external") {
+      // External Desmos iframe
+      const url =
+        cfg.url ||
+        project.external?.url ||
+        "https://www.desmos.com/calculator?embed";
+      iframe.src = url;
+      iframe.removeAttribute("style"); // CSS handles sizing
+      iframe.removeAttribute("class");
+      document.body.classList.add("compact-desmos");
+      return;
+    }
+
+    // Fallback → api
+    iframe.src = `templates/desmos_sketch.html?folder=${encodeURIComponent(
+      project.folder
+    )}`;
+    document.body.classList.add("compact-desmos");
   }
 
   loadProject();
@@ -67,19 +182,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // ------------------------
   // Start / Stop buttons
   // ------------------------
-  document.getElementById("startBtn").addEventListener("click", () => {
+  document.getElementById("startBtn")?.addEventListener("click", () => {
     if (!currentProject) return;
-    if (currentProject.type === "html") {
-      iframe.src = `${currentProject.folder}/${currentProject.files[0]}`;
-    } else {
-      iframe.src = `templates/${
-        currentProject.type
-      }_sketch.html?folder=${encodeURIComponent(currentProject.folder)}`;
-    }
+    setIframeForProject(currentProject);
   });
 
-  document.getElementById("stopBtn").addEventListener("click", () => {
-    iframe.src = "about:blank";
+  document.getElementById("stopBtn")?.addEventListener("click", () => {
+    if (iframe) iframe.src = "about:blank";
   });
 
   // ------------------------
@@ -149,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!msg) return;
           if (msg.type === "captureReady" && msg.blob) {
             removeEventListener("message", onMessage);
-            resolve(msg.blob); // Blob comes from child via structured clone
+            resolve(msg.blob);
           } else if (msg.type === "captureError") {
             removeEventListener("message", onMessage);
             reject(new Error(msg.message || "Capture failed"));
@@ -200,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Copy button → capture then write to clipboard (needs user gesture)
     copyBtn?.addEventListener("click", async () => {
       try {
-        const mime = "image/png"; // or "image/webp" / "image/jpeg"
+        const mime = "image/png";
         const blob = await requestCapture({
           scale: 3,
           mime,
@@ -213,10 +322,8 @@ document.addEventListener("DOMContentLoaded", () => {
           await navigator.clipboard.write([
             new ClipboardItem({ [mime]: blob }),
           ]);
-          // Optional toast
           console.log("Screenshot copied to clipboard.");
         } else {
-          // Fallback: download if clipboard API missing
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;

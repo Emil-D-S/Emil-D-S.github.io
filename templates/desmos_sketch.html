@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desmos Embed</title>
+
+    <!-- Desmos API (public demo key 'dcb' is fine for embeds) -->
+    <script src="https://www.desmos.com/api/v1.8/calculator.js?apiKey=dcb"></script>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      /* Fill the viewport so the parent can size the iframe to this */
+      #calculator {
+        position: fixed;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="calculator"></div>
+
+    <script type="module">
+      const params = new URLSearchParams(window.location.search);
+      const folder = params.get("folder"); // e.g. ?folder=desmos_demo
+      // Optional overrides via URL:
+      //   ?state=custom.json (inside the folder)
+      //   ?expressions=0/1, ?settingsMenu=0/1, ?keypad=0/1, ?border=0/1, ?zoomButtons=0/1
+      //   ?expressionsCollapsed=0/1, ?lockViewport=0/1
+      //   ?xMin=-10&xMax=10&yMin=-5&yMax=5 (initial viewport)
+      // If no state is found, we’ll show a simple default.
+
+      // --- Helper: parse boolean-like URL values ---
+      const boolParam = (name, def) => {
+        if (!params.has(name)) return def;
+        const v = params.get(name);
+        return v === "1" || v === "true";
+      };
+
+      // --- Defaults (can be overridden by data.json or URL) ---
+      let options = {
+        expressions: boolParam("expressions", true),
+        settingsMenu: boolParam("settingsMenu", true),
+        keypad: boolParam("keypad", false),
+        border: boolParam("border", false),
+        zoomButtons: boolParam("zoomButtons", true),
+        expressionsCollapsed: boolParam("expressionsCollapsed", false),
+        lockViewport: boolParam("lockViewport", false),
+      };
+      let stateFile = params.get("state") || "state.json"; // relative to folder
+      let viewport = {
+        xMin: params.get("xMin"),
+        xMax: params.get("xMax"),
+        yMin: params.get("yMin"),
+        yMax: params.get("yMax"),
+      };
+
+      // --- Try to read project-specific config from ../projects/data.json ---
+      // Expected optional shape in your data.json:
+      // {
+      //   "folder": "desmos_demo",
+      //   "desmos": {
+      //     "state": "state.json",
+      //     "options": { "keypad": true, "expressionsCollapsed": false },
+      //     "viewport": { "xMin": -10, "xMax": 10, "yMin": -5, "yMax": 5 }
+      //   }
+      // }
+      if (folder) {
+        try {
+          const res = await fetch(
+            new URL("../projects/data.json", window.location.href)
+          );
+          const list = await res.json();
+          const proj = Array.isArray(list)
+            ? list.find((p) => p.folder === folder)
+            : null;
+          if (proj && proj.desmos) {
+            if (
+              proj.desmos.options &&
+              typeof proj.desmos.options === "object"
+            ) {
+              options = { ...options, ...proj.desmos.options };
+            }
+            if (proj.desmos.state && !params.has("state")) {
+              stateFile = proj.desmos.state;
+            }
+            if (proj.desmos.viewport && !params.has("xMin")) {
+              viewport = { ...viewport, ...proj.desmos.viewport };
+            }
+          }
+        } catch (e) {
+          console.warn("Could not load data.json; using defaults:", e);
+        }
+      }
+
+      // --- Create the calculator ---
+      const elt = document.getElementById("calculator");
+      const calculator = Desmos.GraphingCalculator(elt, options);
+
+      // --- Apply viewport if all bounds supplied (either from URL or config) ---
+      if (
+        [viewport.xMin, viewport.xMax, viewport.yMin, viewport.yMax].every(
+          (v) => v !== null && v !== undefined
+        )
+      ) {
+        calculator.setMathBounds({
+          left: Number(viewport.xMin),
+          right: Number(viewport.xMax),
+          bottom: Number(viewport.yMin),
+          top: Number(viewport.yMax),
+        });
+      }
+
+      // --- Load state if available (../<folder>/<stateFile>) ---
+      async function tryLoadState() {
+        if (!folder || !stateFile) return false;
+        try {
+          const url = new URL(
+            `../${folder}/${stateFile}`,
+            window.location.href
+          );
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          const state = await res.json();
+          calculator.setState(state);
+          return true;
+        } catch (e) {
+          console.warn("Could not load Desmos state; falling back:", e);
+          return false;
+        }
+      }
+
+      const loaded = await tryLoadState();
+
+      // --- Fallback: set a simple demo if no state.json found ---
+      if (!loaded) {
+        calculator.setExpression({ id: "a", latex: "y=\\sin(x)" });
+        calculator.setExpression({ id: "b", latex: "y=\\cos(x)" });
+      }
+
+      // --- Post size to parent (for iframe auto-resize like your p5 template) ---
+      function sendSize() {
+        const rect = elt.getBoundingClientRect();
+        parent.postMessage(
+          {
+            type: "canvasSize",
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          },
+          "*"
+        );
+      }
+
+      // Use ResizeObserver for more reliable updates
+      const ro = new ResizeObserver(sendSize);
+      ro.observe(elt);
+      window.addEventListener("orientationchange", sendSize);
+      window.addEventListener("load", sendSize);
+      // Also send once after initial layout settle
+      requestAnimationFrame(() => requestAnimationFrame(sendSize));
+
+      // --- Optional: live expression injection via URL (quick tests)
+      // Example: ?add=\\frac{1}{x}&add=y=2x
+      if (params.has("add")) {
+        const adds = params.getAll("add");
+        adds.forEach((latex, i) => {
+          calculator.setExpression({ id: "url_add_" + i, latex });
+        });
+      }
+
+      // Expose for debugging in console (optional)
+      window.__desmos = calculator;
+    </script>
+  </body>
+</html>
