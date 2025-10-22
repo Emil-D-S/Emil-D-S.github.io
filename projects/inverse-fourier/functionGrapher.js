@@ -1,6 +1,25 @@
+class Trace {
+  constructor(funcOrData, { strokeColor = "gray", strokeWeight = 1 } = {}) {
+    this.strokeColor = strokeColor;
+    this.strokeWeight = strokeWeight;
+    this.setFunction(funcOrData);
+  }
+
+  setFunction(f) {
+    if (typeof f === "function") {
+      this.func = f;
+      this.traceData = null;
+    } else {
+      this.traceData = f; // array or Float32Array of pixels
+      this.func = null;   // will be built later by FunctionGrapher
+    }
+    return this;
+  }
+}
+
 class FunctionGrapher {
   constructor(
-    func,
+    traces,
     {
       startX = 0,
       endX = TWO_PI,
@@ -12,7 +31,7 @@ class FunctionGrapher {
       axesCol = 200,
     } = {}
   ) {
-    this.func = func;
+    this.traces = traces;
     this.startX = startX;
     this.endX = endX;
     this.scaleY = scaleY;
@@ -24,7 +43,7 @@ class FunctionGrapher {
     this.path = [];
   }
 
-  setFunction(f) {
+  setdsdsadsafFunction(f) {
     // Accept either a function or a "trace" (array). If trace is passed, build a function from it.
     if (typeof f === "function") {
       this.func = f;
@@ -48,35 +67,41 @@ class FunctionGrapher {
   }
 
   draw() {
-    const { startX, endX, scaleY } = this;
-    const originX = map(0, startX, endX, 0, width);
     const originY = height / 2;
-
-    // axes
+    const originX = map(0, this.startX, this.endX, 0, width);
+  
     if (this.showAxes) {
       stroke(this.axesCol);
       if (originX >= 0 && originX <= width) line(originX, 0, originX, height);
       line(0, originY, width, originY);
     }
-
-    if (this.showMarks) {
-      for (let i = -5; i <= 5; i++) {
-        //this.drawMark(10, 10);
+  
+    this.traces.forEach(t => {
+      // if this trace only has raw data, rebuild func from it
+      if (!t.func && t.traceData) {
+        t.func = this.buildFunctionFromTrace(t.traceData);
       }
-    }
+  
+      noFill();
+      stroke(t.strokeColor);
+      strokeWeight(t.strokeWeight);
+      beginShape();
+      for (let px = 0; px < width; px++) {
+        const x = map(px, 0, width, this.startX, this.endX);
+        const y = t.func ? t.func(x) : 0;
+        vertex(px, originY - y * this.scaleY);
+      }
+      endShape();
+    });
+  }
 
-    // graph
-    noFill();
-    stroke(this.strokeCol);
-    strokeWeight(this.strokeWeight);
-    beginShape();
-    for (let px = 0; px <= width; px++) {
-      const x = map(px, 0, width, startX, endX);
-      const y = typeof this.func === "function" ? this.func(x) : 0;
-      const py = originY - y * scaleY;
-      vertex(px, py);
-    }
-    endShape();
+  buildFunctionFromTrace(trace) {
+    return x => {
+      const px = Math.round(map(x, this.startX, this.endX, 0, width));
+      const py = trace[px];
+      if (Number.isNaN(py) || py === undefined) return 0;
+      return (height / 2 - py) / this.scaleY;
+    };
   }
 
   drawMark(p, length) {

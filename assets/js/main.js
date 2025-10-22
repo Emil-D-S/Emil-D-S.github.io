@@ -79,9 +79,9 @@ async function loadProjects() {
       </a>
       <div class="projectInfo">
         <a href="${href}" ${rel ? `rel="${rel}"` : ""} target="${target}">
-          <i class="fa-solid fa-arrow-right"></i> <h3>${
+          <i style="display: none"class="fa-solid fa-arrow-right"></i> <h3>${
             p.title || "Untitled"
-          } ${target == "_blank" ? "↗" : ""}</h3>
+          } ${target == "_blank" ? "" : ""}</h3> 
         </a>
         <p>${p.desc || ""}</p>
       </div>
@@ -90,5 +90,7 @@ async function loadProjects() {
     container.appendChild(el);
   });
 }
+
+// ↗ sipka
 
 loadProjects();

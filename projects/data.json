@@ -16,16 +16,25 @@
     "image": "projects/particle_attractor/preview.png"
   },
   {
-    "title": "Desmos – Redirect",
-    "desc": "Opens the Desmos share link directly",
+    "title": "Pericycloidal movement",
+    "desc": "Konstruktivní geometrie",
     "type": "desmos",
     "folder": "projects/desmos_redirect",
-    "image": "projects/desmos_redirect/preview.png",
+    "image": "assets/images/desmos_KG_ukol.png",
     "desmos": {
       "mode": "redirect",
-      "url": "https://www.desmos.com/calculator/7b38a5637b",
+      "url": "https://www.desmos.com/calculator/3fvbws5ptg",
       "target": "_blank" 
     }
+  },
+  {
+    "title": "Ball balancing using PID controller",
+    "desc": "interactive PID controller",
+    "url": "pid-ball-balancing",
+    "folder": "projects/ball-balancing-PID-controller",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/ball-balancing-PID-controller/preview.png"
   },
   {
     "title": "Discrete Fourier transform",

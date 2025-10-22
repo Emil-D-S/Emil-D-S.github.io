@@ -15,6 +15,8 @@ function isInsideCanvas(mx, my) {
   return mx >= 0 && mx < width && my >= 0 && my < height;
 }
 
+
+
 function setup() {
   createCanvas(1000, 600);
   pixelDensity(1);
@@ -23,7 +25,19 @@ function setup() {
   harmonicSlider = createSlider(0, 100, 1);
   harmonicSlider.position(15, height);
 
-  plot = new FunctionGrapher(f, {
+  let origoFuncTrace = new Trace(f, {
+    strokeWeight: 1,
+    strokeColor: "red"
+  })
+
+  let dftFuncTrace = new Trace(() => {
+    return 0;
+  }, {
+    strokeWeight: 1,
+    strokeColor: "yellow"
+  })
+
+  plot = new FunctionGrapher([origoFuncTrace, dftFuncTrace], {
     startX: 0,
     endX: TWO_PI,
     scaleY: 200,
@@ -34,7 +48,7 @@ function setup() {
     strokeCol: "red",
   });
 
-  plotDFT = new FunctionGrapher(
+  /*plotDFT = new FunctionGrapher(
     () => {
       return 0;
     },
@@ -42,19 +56,19 @@ function setup() {
       startX: 0,
       endX: TWO_PI,
       scaleY: 200,
-      showAxes: false,
+      showAxes: false,  
 
       strokeWeight: 1,
 
       strokeCol: "yellow",
     }
-  );
+  );*/
 }
 
 function draw() {
   background(20);
   plot.draw();
-  plotDFT.draw();
+  //plotDFT.draw();
 
   fill(255);
   noStroke();
@@ -116,13 +130,24 @@ function mouseReleased() {
   //console.log(trace);
   let z = dftFromPoints(plot.scaleTraceToFunction(trace));
 
-  plotDFT.setFunction((x) => {
-    let F = z.A0;
-    const K = Math.min(harmonicSlider.value(), z.amps.length - 1);
-    for (let k = 1; k <= K; k++) {
-      F += z.amps[k] * Math.cos(k * x + z.phases[k]);
+  plot.traces[0].setFunction(trace); 
+
+  plot.traces[1].func = (x) => {
+      let F = z.A0;
+      const K = Math.min(harmonicSlider.value(), z.amps.length - 1);
+      for (let k = 1; k <= K; k++) {
+        F += z.amps[k] * Math.cos(k * x + z.phases[k]);
+      }
+      return F;
     }
-    return F;
-  });
+
+  // plotDFT.setFunction((x) => {
+  //   let F = z.A0;
+  //   const K = Math.min(harmonicSlider.value(), z.amps.length - 1);
+  //   for (let k = 1; k <= K; k++) {
+  //     F += z.amps[k] * Math.cos(k * x + z.phases[k]);
+  //   }
+  //   return F;
+  // });
   //console.log(z);
 }
