@@ -115,6 +115,7 @@ let calcFKMarker = new THREE.Mesh(
   new THREE.BoxGeometry(0.1, 0.1, 0.1),
   new THREE.MeshBasicMaterial({ color: 0x00ff00 })
 );
+calcFKMarker.visible = false;
 
 // ============================================================================
 // GLOBAL VARIABLES - GUI State
