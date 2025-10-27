@@ -155,7 +155,7 @@ function init() {
   );
 
   const groundPlaneTexture = new THREE.TextureLoader().load(
-    "../projects/turf-war/assets/Prototype_Grid_Gray_04-512x512.png",
+    "../projects/scara-robot-IK/assets/Prototype_Grid_Gray_04-512x512.png",
     () => {
       groundPlane.material.map = groundPlaneTexture;
       groundPlane.material.needsUpdate = true;
@@ -169,7 +169,7 @@ function init() {
   const light = new THREE.HemisphereLight(0xffffbb, 0x080820, 1);
   scene.add(light);
 
-  //draw coordnite cross
+  //draw coordinate cross
 
   let axes = new THREE.AxesHelper(5);
   scene.add(axes);

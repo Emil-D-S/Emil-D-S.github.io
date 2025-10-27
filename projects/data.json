@@ -4,7 +4,7 @@
     "desc": "3D clock using Three.js library",
     "folder": "projects/js-clock",
     "type": "three",
-    "files": ["sketch.js"],
+    "files": [{ "name": "sketch.js", "type": "module" }],
     "image": "projects/js-clock/preview.png"
   },
   {
@@ -54,19 +54,34 @@
     "image": "projects/lin-alg-transform-visualization/preview.png"
   },
   {
-    "title": "Pool prediction simulator",
+    "title": "Pool prediction simulator WIP",
     "desc": "",
     "folder": "projects/ball-collision-prediction",
     "type": "p5",
     "files": ["sketch.js"],
-    "image": "projects/ball-collision-prediction/preview.png"
+    "image": "assets/images/WIP.png"
+  },
+  {
+    "title": "6DOF Antropomorphic robot",
+    "desc": "using Jacobian-based iterative inverse kinematics",
+    "folder": "projects/6DOF-antropo-robot",
+    "type": "three",
+    "forceDesktop": true,
+    "files": [
+      { "name": "shiftScroll.global.js", "type": "module" },
+      { "name": "paths.js", "type": "module" },
+      { "name": "robotState.js", "type": "module" },
+      { "name": "kinematics.js", "type": "module" },
+      { "name": "sketch.js", "type": "module" }
+    ],
+    "image": "projects/6DOF-antropo-robot/preview.png"
   },
   {
     "title": "Scara robot simulation",
     "desc": "Simple inverse kinematics of Scara robot",
-    "folder": "projects/turf-war",
+    "folder": "projects/scara-robot-IK",
     "type": "three",
     "files": ["sketch.js"],
-    "image": "projects/turf-war/preview.png"
+    "image": "projects/scara-robot-IK/preview.png"
   }
 ]

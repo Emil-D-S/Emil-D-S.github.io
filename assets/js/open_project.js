@@ -32,6 +32,53 @@ function buildForwardedQuery(whitelist = []) {
 }
 
 // ------------------------
+// **NEW: Desktop Mode Functions**
+// ------------------------
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+}
+
+function forceDesktopViewport() {
+  // Set desktop viewport
+  let viewportMeta = document.querySelector('meta[name="viewport"]');
+  if (!viewportMeta) {
+    viewportMeta = document.createElement("meta");
+    viewportMeta.name = "viewport";
+    document.head.appendChild(viewportMeta);
+  }
+  viewportMeta.content = "width=1280, initial-scale=0.5, user-scalable=yes";
+
+  // Add desktop mode class
+  document.body.classList.add("force-desktop-mode");
+
+  // Show prominent notice on mobile
+  if (isMobileDevice()) {
+    const notice = document.createElement("div");
+    notice.className = "desktop-requirement-notice";
+    notice.innerHTML = `
+  <div style="
+    background: #ff9800;
+    color: white;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-size: 0.85rem;
+  ">
+    <i class="fa-solid fa-desktop"></i>
+    <strong>Desktop Required:</strong> 
+    Enable "Desktop Site" in browser settings (Chrome: ⋮ → Desktop site)
+  </div>
+`;
+    document.body.insertAdjacentElement("afterbegin", notice);
+  }
+}
+
+// ------------------------
 // Main
 // ------------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -69,6 +116,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!project) {
       if (container) container.innerHTML = "<p>Project not found.</p>";
       return;
+    }
+
+    // **NEW: Force desktop viewport if specified**
+    if (project.forceDesktop) {
+      forceDesktopViewport();
     }
 
     // Update title/description

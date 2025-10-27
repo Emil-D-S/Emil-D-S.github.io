@@ -1,58 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <title>Three.js Loader</title>
-  </head>
-  <body style="margin: 0; overflow: hidden">
+    <meta charset="utf-8" />
+    <title>Three.js Project Loader (p5-style sequential loader)</title>
+
+    <!-- optional importmap for module-based projects that import "three" -->
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.161.0/build/three.module.js"
+          "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+          "three/": "https://unpkg.com/three@0.161.0/"
         }
       }
     </script>
+
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0b0b0f;
+      }
+    </style>
+  </head>
+
+  <body style="margin: 0; overflow: hidden">
     <script type="module">
+      // --- config / utils ---
+      const DATA_URL = new URL("../projects/data.json", import.meta.url).href;
+
       const params = new URLSearchParams(window.location.search);
-      let folder = decodeURIComponent(params.get("folder") || "");
+      let folder = params.get("folder") || "";
+      folder = decodeURIComponent(folder).replace(/^\/+/, "");
       if (!folder) {
-        document.body.innerHTML = "<p>Error: folder not specified</p>";
+        document.body.innerHTML =
+          "<p style='color:red;padding:1rem'>Error: folder not specified</p>";
         throw new Error("No folder specified");
       }
-      folder = folder.replace(/^\/+/, "");
-      // Resolve "../" from /templates/ to the site root, then into /projects/...
-      const s = document.createElement("script");
-      s.type = "module";
-      s.src = new URL(`../${folder}/sketch.js`, import.meta.url).href;
-      s.onload = () => console.log("Loaded:", s.src);
-      s.onerror = () => {
-        const msg = `Failed to load ${s.src}`;
-        console.error(msg);
+
+      function log(...a) {
+        console.log("[three_loader]", ...a);
+      }
+      function fail(msg) {
+        console.error("[three_loader]", msg);
         document.body.insertAdjacentHTML(
           "beforeend",
-          `<p style="color:red">${msg}</p>`
+          `<p style="color:#f88;padding:1rem">${msg}</p>`
         );
-      };
-      document.body.appendChild(s);
-      // Canvas size reporting
-      function sendCanvasSize() {
+      }
+
+      // --- read file list from data.json (fallback to kin/ sketch) ---
+      async function readFiles() {
+        let files = [
+          // default order (matches p5-style: helper first, then sketch)
+          { name: "kinematics.js", type: "nomodule" },
+          { name: "sketch.js", type: "nomodule" },
+        ];
+
+        try {
+          const res = await fetch(DATA_URL);
+          if (!res.ok) throw new Error("data.json fetch failed: " + res.status);
+          const list = await res.json();
+
+          let proj = null;
+          if (Array.isArray(list)) {
+            proj = list.find((p) => p.folder === folder);
+          } else if (typeof list === "object" && list !== null) {
+            // map style or keyed by folder
+            if (list[folder]) proj = list[folder];
+            else {
+              for (const k of Object.keys(list)) {
+                if (list[k] && list[k].folder === folder) {
+                  proj = list[k];
+                  break;
+                }
+              }
+            }
+          }
+
+          if (proj && Array.isArray(proj.files) && proj.files.length) {
+            files = proj.files
+              .map((f) => {
+                if (typeof f === "string") {
+                  // strings default to nomodule to mimic the p5 behaviour (global scripts)
+                  return { name: f, type: "nomodule" };
+                }
+                // allow { name: "file.js", type: "module"|"nomodule" }
+                if (f && typeof f === "object") {
+                  const name = f.name || f.file || f.src;
+                  const type = (f.type || "nomodule").toLowerCase();
+                  return {
+                    name,
+                    type: type === "module" ? "module" : "nomodule",
+                  };
+                }
+                return null;
+              })
+              .filter(Boolean);
+          } else {
+            log(
+              "No project entry in data.json; using default files:",
+              files.map((f) => f.name)
+            );
+          }
+        } catch (e) {
+          console.warn(
+            "[three_loader] couldn't read data.json; using defaults",
+            e
+          );
+        }
+
+        return files;
+      }
+
+      // --- sequential loader (waits for each script) ---
+      function appendScript(srcHref, type = "nomodule") {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.defer = true;
+          script.onerror = () => reject(new Error("Failed to load " + srcHref));
+          script.onload = () => resolve(srcHref);
+
+          // Resolve relative to this loader's URL (so ../project/... works robustly)
+          const resolved = new URL(srcHref, import.meta.url).href;
+          script.src = resolved;
+
+          if (type === "module") script.type = "module";
+          // otherwise leave as plain script (global), which behaves like p5 loader
+
+          document.body.appendChild(script);
+        });
+      }
+
+      // --- load files in order ---
+      async function loadAll() {
+        const fileList = await readFiles();
+        const toLoad = fileList.map((f) => ({
+          href: `../${folder}/${f.name.replace(/^\/+/, "")}`,
+          type: f.type,
+        }));
+
+        try {
+          for (const f of toLoad) {
+            log("Loading", f.href, "as", f.type);
+            await appendScript(f.href, f.type);
+          }
+          log("All project files loaded.");
+        } catch (e) {
+          fail("Failed to load project files: " + e.message);
+          console.error(e);
+        }
+      }
+
+      // --- canvas size reporting (exact same behaviour you had) ---
+      function sendCanvasSize(extra = 0) {
         const canvas = document.querySelector("canvas");
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
         parent.postMessage(
-          { type: "canvasSize", width: rect.width, height: rect.height },
+          {
+            type: "canvasSize",
+            width: Math.round(rect.width),
+            height: Math.round(rect.height + extra),
+          },
           "*"
         );
       }
+
       const observer = new MutationObserver(() => {
         const canvas = document.querySelector("canvas");
         if (canvas) {
           sendCanvasSize();
-          window.addEventListener("resize", sendCanvasSize);
+          window.addEventListener("resize", () => sendCanvasSize());
           observer.disconnect();
         }
       });
       observer.observe(document.body, { childList: true, subtree: true });
+
+      // --- kick off loader ---
+      loadAll();
     </script>
   </body>
 </html>

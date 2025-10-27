@@ -573,13 +573,19 @@ button {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
+button#stopBtn {
+  background: #38000a;
+  color: #fff;
+  /* border: 1px solid #800018; */
+}
+
 /* =========================================
    FOOTER
 ========================================= */
 
 footer {
   text-align: center;
-  padding: 1rem;
+  padding: 0.5rem;
   border-top: 1px solid var(--border-color);
   font-size: 0.9rem;
   color: var(--text);
