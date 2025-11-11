@@ -1,75 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>p5.js Project Loader</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-  </head>
-  <body style="margin: 0; overflow: hidden">
-    <script type="module">
-      const params = new URLSearchParams(window.location.search);
-      const folder = params.get("folder");
-      if (!folder) {
-        /* ... */
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>p5 in iframe – working minimal</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #0b0b0f; }
+    #host { display: grid; place-items: center; padding: 16px; }
+    iframe.p5frame { width: min(100%, 900px); border: none; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  </style>
+</head>
+<body>
+  <div id="host"></div>
+
+  <script>
+    // 1) HTML obsahu iframu – p5 z CDN + „global mode“ sketch
+    const srcdoc = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    html, body { height:100%; margin:0; background:#121218; }
+    canvas { display:block; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <script>
+    // Global mode – p5 připojí setup()/draw() na window
+    let t = 0;
+    function setup() {
+      // Zvol pevnou velikost, nebo okno iframu: createCanvas(windowWidth, windowHeight)
+      createCanvas(640, 360);
+      noStroke();
+      // Nahlás výšku rodiči, aby iframe nebyl 18 px
+      setTimeout(() => {
+        const h = document.documentElement.scrollHeight;
+        parent.postMessage({ kind: 'p5-size', height: h }, '*');
+      }, 0);
+    }
+    function draw() {
+      background(20);
+      const cx = width/2, cy = height/2;
+      const r = 120 + 60 * sin(t);
+      fill(60, 160, 255);
+      circle(cx, cy, 2*r);
+      fill(255);
+      textSize(14);
+      text('p5.js in iframe – OK', 12, 20);
+      t += 0.02;
+    }
+    // Když chceš adaptivní výšku podle velikosti canvasu:
+    function windowResized() {
+      // resizeCanvas(windowWidth, windowHeight); // pokud používáš windowWidth/windowHeight
+      setTimeout(() => {
+        const h = document.documentElement.scrollHeight;
+        parent.postMessage({ kind: 'p5-size', height: h }, '*');
+      }, 0);
+    }
+  <\/script>
+</body>
+</html>`.trim();
+
+    // 2) Vytvoř iframe – POZOR na sandbox: musí mít allow-scripts, jinak p5 neběží
+    const iframe = document.createElement('iframe');
+    iframe.className = 'p5frame';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin'); // klíčové
+    iframe.srcdoc = srcdoc;
+
+    // Základní výška, než dorazí zpráva z iframu
+    iframe.style.height = '380px';
+
+    document.getElementById('host').appendChild(iframe);
+
+    // 3) Převzetí výšky z iframu, aby se nehroutil na 18 px
+    window.addEventListener('message', (ev) => {
+      if (ev?.data?.kind === 'p5-size' && typeof ev.data.height === 'number') {
+        // + pár px rezervy na stíny/zaoblení
+        iframe.style.height = (ev.data.height + 2) + 'px';
       }
-
-      let files = ["sketch.js"]; // fallback
-      try {
-        const res = await fetch(
-          new URL("../projects/data.json", window.location.href)
-        );
-        const list = await res.json();
-        const proj = Array.isArray(list)
-          ? list.find((p) => p.folder === folder)
-          : null;
-        if (proj && Array.isArray(proj.files) && proj.files.length) {
-          files = proj.files.slice(); // use order from data.json
-        }
-      } catch (e) {
-        console.warn("Could not load data.json; using default files list:", e);
-      }
-
-      async function loadFiles() {
-        for (const f of files) {
-          const script = document.createElement("script");
-          script.src = `../${folder}/${f}`; // ← no leading slash
-          script.defer = true;
-          document.body.appendChild(script);
-          await new Promise((res, rej) => {
-            script.onload = res;
-            script.onerror = () => rej(new Error("Failed to load " + f));
-          });
-        }
-      }
-
-      // --- Send canvas size to parent for iframe resizing ---
-      function sendCanvasSize() {
-        const canvas = document.querySelector("canvas");
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        parent.postMessage(
-          { type: "canvasSize", width: rect.width, height: rect.height + 50 },
-          "*"
-        );
-      }
-
-      // --- Wait for p5.js canvas ---
-      const observer = new MutationObserver(() => {
-        const canvas = document.querySelector("canvas");
-        if (canvas) {
-          sendCanvasSize();
-          window.addEventListener("resize", sendCanvasSize);
-          observer.disconnect();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      // --- Load all files and start ---
-      loadFiles().catch((err) => {
-        console.error("Failed to load project files:", err);
-        document.body.innerHTML = `<p>Failed to load project files: ${err}</p>`;
-      });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>

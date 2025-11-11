@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JSXGraph Project Loader</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: transparent;
+      }
+      /* Default canvas size; change in each sketch.js if you want */
+      #box.jxgbox {
+        width: 600px;
+        height: 400px;
+        background: #111;
+      }
+      /* kill any injected body background */
+      body[inject_vt_svd],
+      body[inject_vt_svd="true"] {
+        background: transparent !important;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js"></script>
+  </head>
+  <body>
+    <div id="box" class="jxgbox"></div>
+
+    <script type="module">
+      // -------- params --------
+      const params = new URLSearchParams(window.location.search);
+      let folder = params.get("folder") || "";
+      folder = decodeURIComponent(folder).replace(/^\/+/, "");
+      if (!folder) {
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          "<p style='color:#f88;padding:1rem'>Error: folder not specified</p>"
+        );
+        throw new Error("No folder specified");
+      }
+
+      // -------- optional helper: set size per-sketch (no JSON) --------
+      // Use in your sketch.js: setJSXBoxSize({ width: 700, height: 450, center: true })
+      window.setJSXBoxSize = function ({
+        width,
+        height,
+        maxWidth,
+        maxHeight,
+        minWidth,
+        minHeight,
+        center,
+        pageBg,
+        boxBg,
+      } = {}) {
+        const box = document.getElementById("box");
+        const css = (v) =>
+          v == null || v === ""
+            ? null
+            : /%|vh|vw|vmin|vmax|rem|em|ch|px$/.test(v)
+            ? v
+            : `${parseFloat(v)}px`;
+        if (width) box.style.width = css(width);
+        if (height) box.style.height = css(height);
+        if (maxWidth) box.style.maxWidth = css(maxWidth);
+        if (maxHeight) box.style.maxHeight = css(maxHeight);
+        if (minWidth) box.style.minWidth = css(minWidth);
+        if (minHeight) box.style.minHeight = css(minHeight);
+        if (boxBg != null) box.style.background = boxBg;
+        if (pageBg != null) document.body.style.background = pageBg;
+        if (center) {
+          document.body.style.display = "grid";
+          document.body.style.placeItems = "center";
+          document.body.style.height = "100%";
+        }
+      };
+
+      // -------- load project files (default: sketch.js) --------
+      async function loadAll() {
+        const files = [{ name: "sketch.js", type: "nomodule" }]; // no size from JSON
+        for (const f of files) {
+          await appendScript(
+            `../${folder}/${f.name.replace(/^\/+/, "")}`,
+            f.type
+          );
+        }
+      }
+
+      function appendScript(srcHref, type = "nomodule") {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.defer = true;
+          s.onerror = () => reject(new Error("Failed to load " + srcHref));
+          s.onload = () => resolve(srcHref);
+          s.src = new URL(srcHref, import.meta.url).href;
+          if (type === "module") s.type = "module";
+          document.body.appendChild(s);
+        });
+      }
+
+      // start
+      loadAll();
+    </script>
+  </body>
+</html>

@@ -19,17 +19,17 @@ export function getFixedSize(defaultW = 800, defaultH = 600) {
   return { WIDTH, HEIGHT };
 }
 
-// Center the canvas in the body; pass bg to set body background, or omit for transparent
-export function centerBody(bg /* string | null */) {
-  Object.assign(document.body.style, {
-    margin: "0",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    ...(bg ? { background: bg } : {}),
-  });
-}
+// // Center the canvas in the body; pass bg to set body background, or omit for transparent
+// export function centerBody(bg /* string | null */) {
+//   Object.assign(document.body.style, {
+//     margin: "0",
+//     display: "flex",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     height: "100vh",
+//     ...(bg ? { background: bg } : {}),
+//   });
+// }
 
 // Factory that returns a function to post the canvas CSS size exactly once
 export function postCanvasSizeOnceFactory(source = "three_sketch") {

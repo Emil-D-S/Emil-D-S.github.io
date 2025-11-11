@@ -8,6 +8,20 @@
     "image": "projects/js-clock/preview.png"
   },
   {
+    "title": "JSX demo",
+    "folder": "projects/jsx-demo",
+    "type": "jsxgraph",
+    "files": ["sketch.js"]
+  },
+  {
+    "title": "Car Game",
+    "desc": "car sim",
+    "folder": "projects/car-pid",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/car-pid/preview.png"
+  },
+  {
     "title": "Particle Attractor",
     "desc": "Simple particle gravity simulation using p5.js library",
     "folder": "projects/particle_attractor",

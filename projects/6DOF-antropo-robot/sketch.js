@@ -11,7 +11,6 @@ import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
 import {
   domReady,
   getFixedSize,
-  centerBody,
   postCanvasSizeOnceFactory,
 } from "../../templates/common/embed-utils.js";
 import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js";
@@ -905,7 +904,6 @@ function onLocalIkControlChange(payload) {
 // ============================================================================
 function setupRenderer() {
   const { WIDTH, HEIGHT } = getFixedSize(1300, 700);
-  centerBody();
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

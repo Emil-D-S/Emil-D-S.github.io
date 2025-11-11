@@ -1,8 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="width: min-content">
   <head>
     <meta charset="utf-8" />
-    <title>Three.js Project Loader (p5-style sequential loader)</title>
+    <title>Three.js Project Loader</title>
+
+    <!-- <script>
+      (function breakWhenBodyIsCentered() {
+        const hit = () => {
+          const s = getComputedStyle(document.body);
+          if (
+            document.body.hasAttribute("inject_vt_svd") ||
+            s.display === "flex" ||
+            s.justifyContent === "center" ||
+            s.alignItems === "center" ||
+            s.height === "100vh"
+          ) {
+            debugger; // <-- DevTools will stop here
+          }
+        };
+
+        // run ASAP and on any DOM/style change
+        const runSoon = () =>
+          requestAnimationFrame(() => requestAnimationFrame(hit));
+        document.addEventListener("DOMContentLoaded", runSoon, { once: true });
+        runSoon();
+
+        new MutationObserver(runSoon).observe(document.documentElement, {
+          attributes: true,
+          subtree: true,
+          attributeFilter: ["style", "class", "inject_vt_svd"],
+        });
+      })();
+    </script> -->
 
     <!-- optional importmap for module-based projects that import "three" -->
     <script type="importmap">
@@ -20,14 +49,17 @@
       body {
         height: 100%;
         margin: 0;
-        background: #0b0b0f;
+        overflow: hidden;
+      }
+      /* Optional: make any canvas naturally fill if the sketch sets it that way */
+      canvas {
+        display: block;
       }
     </style>
   </head>
 
-  <body style="margin: 0; overflow: hidden">
+  <body>
     <script type="module">
-      // --- config / utils ---
       const DATA_URL = new URL("../projects/data.json", import.meta.url).href;
 
       const params = new URLSearchParams(window.location.search);
@@ -35,7 +67,7 @@
       folder = decodeURIComponent(folder).replace(/^\/+/, "");
       if (!folder) {
         document.body.innerHTML =
-          "<p style='color:red;padding:1rem'>Error: folder not specified</p>";
+          "<p style='color:#f88;padding:1rem'>Error: folder not specified</p>";
         throw new Error("No folder specified");
       }
 
@@ -50,10 +82,8 @@
         );
       }
 
-      // --- read file list from data.json (fallback to kin/ sketch) ---
       async function readFiles() {
         let files = [
-          // default order (matches p5-style: helper first, then sketch)
           { name: "kinematics.js", type: "nomodule" },
           { name: "sketch.js", type: "nomodule" },
         ];
@@ -67,7 +97,6 @@
           if (Array.isArray(list)) {
             proj = list.find((p) => p.folder === folder);
           } else if (typeof list === "object" && list !== null) {
-            // map style or keyed by folder
             if (list[folder]) proj = list[folder];
             else {
               for (const k of Object.keys(list)) {
@@ -82,11 +111,7 @@
           if (proj && Array.isArray(proj.files) && proj.files.length) {
             files = proj.files
               .map((f) => {
-                if (typeof f === "string") {
-                  // strings default to nomodule to mimic the p5 behaviour (global scripts)
-                  return { name: f, type: "nomodule" };
-                }
-                // allow { name: "file.js", type: "module"|"nomodule" }
+                if (typeof f === "string") return { name: f, type: "nomodule" };
                 if (f && typeof f === "object") {
                   const name = f.name || f.file || f.src;
                   const type = (f.type || "nomodule").toLowerCase();
@@ -100,7 +125,7 @@
               .filter(Boolean);
           } else {
             log(
-              "No project entry in data.json; using default files:",
+              "No project entry in data.json; using default:",
               files.map((f) => f.name)
             );
           }
@@ -110,30 +135,21 @@
             e
           );
         }
-
         return files;
       }
 
-      // --- sequential loader (waits for each script) ---
       function appendScript(srcHref, type = "nomodule") {
         return new Promise((resolve, reject) => {
           const script = document.createElement("script");
           script.defer = true;
           script.onerror = () => reject(new Error("Failed to load " + srcHref));
           script.onload = () => resolve(srcHref);
-
-          // Resolve relative to this loader's URL (so ../project/... works robustly)
-          const resolved = new URL(srcHref, import.meta.url).href;
-          script.src = resolved;
-
+          script.src = new URL(srcHref, import.meta.url).href;
           if (type === "module") script.type = "module";
-          // otherwise leave as plain script (global), which behaves like p5 loader
-
           document.body.appendChild(script);
         });
       }
 
-      // --- load files in order ---
       async function loadAll() {
         const fileList = await readFiles();
         const toLoad = fileList.map((f) => ({
@@ -153,32 +169,6 @@
         }
       }
 
-      // --- canvas size reporting (exact same behaviour you had) ---
-      function sendCanvasSize(extra = 0) {
-        const canvas = document.querySelector("canvas");
-        if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        parent.postMessage(
-          {
-            type: "canvasSize",
-            width: Math.round(rect.width),
-            height: Math.round(rect.height + extra),
-          },
-          "*"
-        );
-      }
-
-      const observer = new MutationObserver(() => {
-        const canvas = document.querySelector("canvas");
-        if (canvas) {
-          sendCanvasSize();
-          window.addEventListener("resize", () => sendCanvasSize());
-          observer.disconnect();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      // --- kick off loader ---
       loadAll();
     </script>
   </body>

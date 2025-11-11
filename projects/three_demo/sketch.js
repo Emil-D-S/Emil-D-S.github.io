@@ -3,7 +3,6 @@ import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
 import {
   domReady,
   getFixedSize,
-  centerBody,
   postCanvasSizeOnce,
 } from "../../templates/common/embed-utils.js";
 
@@ -13,7 +12,6 @@ function init() {
   const { WIDTH, HEIGHT } = getFixedSize(800, 600);
 
   // Host/layout (shared patterns)
-  centerBody("#101014");
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

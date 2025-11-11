@@ -5,7 +5,6 @@ import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
 import {
   domReady,
   getFixedSize,
-  centerBody,
   postCanvasSizeOnceFactory,
 } from "../../templates/common/embed-utils.js";
 
@@ -109,7 +108,6 @@ function applyUnitTiling(mesh, texture) {
 function init() {
   // 1) Host/layout
   const { WIDTH, HEIGHT } = getFixedSize(900, 600);
-  centerBody(); // transparent body so border gap shows underlying color
 
   // 2) Renderer (fixed CSS size)
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });

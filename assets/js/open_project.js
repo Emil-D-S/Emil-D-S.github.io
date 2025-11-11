@@ -1,396 +1,342 @@
-// ------------------------
+// ========================
 // Utilities
-// ------------------------
+// ========================
 function getQueryParam(name) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(name);
+  const url = new URLSearchParams(window.location.search);
+  return url.get(name);
 }
-function getAllQueryParams(name) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.getAll(name);
-}
-function hasQueryParam(name) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.has(name);
+function $(id) {
+  return document.getElementById(id);
 }
 
-// Build a query string forwarding selected params (used for Desmos)
-function buildForwardedQuery(whitelist = []) {
-  const urlParams = new URLSearchParams(window.location.search);
-  const out = new URLSearchParams();
-  for (const key of whitelist) {
-    if (!urlParams.has(key)) continue;
-    if (key === "add") {
-      // forward all occurrences
-      for (const v of urlParams.getAll("add")) out.append("add", v);
-    } else {
-      out.set(key, urlParams.get(key));
-    }
-  }
-  const s = out.toString();
-  return s ? `&${s}` : "";
-}
+// ========================
+// Constants
+// ========================
+const IFRAME_ID = "projectFrame";
+const TEMPLATE_BY_TYPE = {
+  p5: "templates/p5_sketch.html",
+  three: "templates/three_sketch.html",
+  jsxgraph: "templates/jsxgraph_sketch.html",
+  desmos: "templates/desmos_sketch.html",
+};
 
-// ------------------------
-// **NEW: Desktop Mode Functions**
-// ------------------------
+// ========================
+// Desktop mode (optional, per-project)
+// ========================
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
   );
 }
-
 function forceDesktopViewport() {
-  // Set desktop viewport
-  let viewportMeta = document.querySelector('meta[name="viewport"]');
-  if (!viewportMeta) {
-    viewportMeta = document.createElement("meta");
-    viewportMeta.name = "viewport";
-    document.head.appendChild(viewportMeta);
+  let vp = document.querySelector('meta[name="viewport"]');
+  if (!vp) {
+    vp = document.createElement("meta");
+    vp.name = "viewport";
+    document.head.appendChild(vp);
   }
-  viewportMeta.content = "width=1280, initial-scale=0.5, user-scalable=yes";
+  vp.content = "width=1280, initial-scale=0.5, user-scalable=yes";
 
-  // Add desktop mode class
   document.body.classList.add("force-desktop-mode");
 
-  // Show prominent notice on mobile
   if (isMobileDevice()) {
     const notice = document.createElement("div");
     notice.className = "desktop-requirement-notice";
     notice.innerHTML = `
-  <div style="
-    background: #ff9800;
-    color: white;
-    padding: 0.5rem 1rem;
-    text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    font-size: 0.85rem;
-  ">
-    <i class="fa-solid fa-desktop"></i>
-    <strong>Desktop Required:</strong> 
-    Enable "Desktop Site" in browser settings (Chrome: ⋮ → Desktop site)
-  </div>
-`;
+      <div style="background:#ff9800;color:#fff;padding:.5rem 1rem;text-align:center;position:sticky;top:0;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:.85rem;">
+        <i class="fa-solid fa-desktop"></i>
+        <strong>Desktop Required:</strong> Enable "Desktop site" in your browser
+      </div>`;
     document.body.insertAdjacentElement("afterbegin", notice);
   }
 }
 
-// ------------------------
-// Main
-// ------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const iframe = document.getElementById("projectFrame");
-  const container = document.getElementById("projectContainer");
-  let currentProject = null;
+// ========================
+// Compact mode toggle (Desmos)
+// ========================
+function setCompactMode(enabled) {
+  document.body.classList.toggle("compact-desmos", !!enabled);
+}
 
-  // ------------------------
-  // Listen for canvas size messages from iframe
-  // ------------------------
-  window.addEventListener("message", (e) => {
-    if (e.data?.type === "canvasSize" && iframe) {
-      const padding = 0; // px extra
-      iframe.style.width = e.data.width + padding + "px";
-      iframe.style.height = e.data.height + padding + "px";
-    }
-  });
+// ========================
+// Canonicalization
+// ========================
+function normalizeType(t, fallback = "jsxgraph") {
+  if (!t) return fallback;
+  t = String(t).toLowerCase();
+  if (t === "desmos_external") return "desmos_external";
+  if (["p5", "three", "jsxgraph", "desmos", "html"].includes(t)) return t;
+  return fallback;
+}
 
-  // ------------------------
-  // Load project from data.json
-  // ------------------------
-  async function loadProject() {
-    const projectId = getQueryParam("project");
-    const res = await fetch("projects/data.json");
-    const projects = await res.json();
+// ========================
+// Iframe routing
+// ========================
+function setIframeForProject(project) {
+  const iframe = $(IFRAME_ID);
+  if (!iframe) return console.error("Missing #projectFrame");
 
-    // Find project by id or folder name
-    const project = projects.find(
-      (p, idx) =>
-        p.id === projectId ||
-        idx === Number(projectId) ||
-        p.folder === projectId
-    );
+  // let CSS handle sizing; keep as fallback
+  iframe.style.width = "100%";
+  iframe.style.height = "100%";
+  iframe.style.border = "0";
 
-    if (!project) {
-      if (container) container.innerHTML = "<p>Project not found.</p>";
+  const urlParams = new URLSearchParams(location.search);
+  const queryType = urlParams.get("type");
+  const type = normalizeType(project?.type || queryType);
+
+  // Non-Desmos
+  if (type !== "desmos" && type !== "desmos_external") {
+    setCompactMode(false);
+    if (type === "html") {
+      const entry = project?.files?.[0] || "index.html";
+      iframe.src = `${project.folder}/${entry}`;
       return;
     }
-
-    // **NEW: Force desktop viewport if specified**
-    if (project.forceDesktop) {
-      forceDesktopViewport();
-    }
-
-    // Update title/description
-    document
-      .getElementById("projectTitle")
-      ?.replaceChildren(project.title || "");
-    document.getElementById("projectDesc")?.replaceChildren(project.desc || "");
-
-    currentProject = project;
-    setIframeForProject(project);
+    const template = TEMPLATE_BY_TYPE[type] || TEMPLATE_BY_TYPE.jsxgraph;
+    iframe.src = `${template}?folder=${encodeURIComponent(project.folder)}`;
+    return;
   }
 
-  function setCompactMode(enabled) {
-    document.body.classList.toggle("compact-desmos", !!enabled);
-  }
-
-  function setCompactMode(enabled) {
-    document.body.classList.toggle("compact-desmos", !!enabled);
-  }
-
-  /* Call this at the end of setIframeForProject(project) */
-  function setIframeForProject(project) {
-    if (!iframe) return;
-
-    // Detect desired mode
-    const urlParams = new URLSearchParams(location.search);
-    const overrideMode = urlParams.get("desmosMode"); // optional override
-    const overrideTarget = urlParams.get("desmosTarget");
-
-    const isLegacyExternal = project.type === "desmos_external";
-    const cfg = project.desmos || {};
-    const mode = (
-      overrideMode ||
+  // Desmos
+  const cfg = project?.desmos || {};
+  const overrideMode = urlParams.get("desmosMode");
+  const overrideTarget = urlParams.get("desmosTarget");
+  const mode = String(
+    overrideMode ||
       cfg.mode ||
-      (isLegacyExternal ? "external" : "api")
-    ).toLowerCase();
+      (type === "desmos_external" ? "external" : "api")
+  ).toLowerCase();
 
-    const isDesmos = project.type === "desmos" || isLegacyExternal;
-
-    // Common: update title/desc already done elsewhere…
-
-    // Route by type/mode
-    if (!isDesmos) {
-      // your non-Desmos logic
-      if (project.type === "html") {
-        iframe.src = `${project.folder}/${project.files?.[0] || "index.html"}`;
-      } else if (project.type === "p5" || project.type === "three") {
-        iframe.src = `templates/${
-          project.type
-        }_sketch.html?folder=${encodeURIComponent(project.folder)}`;
-      } else {
-        iframe.src = `${project.folder}/${project.files?.[0] || "index.html"}`;
-      }
-      document.body.classList.remove("compact-desmos");
-      return;
-    }
-
-    // Desmos modes
-    if (mode === "redirect") {
-      const url = cfg.url || project.external?.url;
-      if (!url) {
-        console.error("Desmos redirect mode requires desmos.url");
-        return;
-      }
-      const target = (overrideTarget || cfg.target || "_self").toLowerCase();
-
-      if (target === "_blank") {
-        // New tab, safe from opener leaks
-        window.open(url, "_blank", "noopener,noreferrer");
-      } else {
-        // Same tab (default)
-        window.location.href = url;
-      }
-      return;
-    }
-
-    if (mode === "api") {
-      // Local embed (same-origin)
-      const forwarded = ""; // (optional) if you forward URL params to the embed
-      iframe.src = `templates/desmos_sketch.html?folder=${encodeURIComponent(
-        project.folder
-      )}${forwarded}`;
-      iframe.removeAttribute("style"); // CSS handles sizing
-      iframe.removeAttribute("class");
-      document.body.classList.add("compact-desmos");
-      return;
-    }
-
-    if (mode === "external") {
-      // External Desmos iframe
-      const url =
-        cfg.url ||
-        project.external?.url ||
-        "https://www.desmos.com/calculator?embed";
-      iframe.src = url;
-      iframe.removeAttribute("style"); // CSS handles sizing
-      iframe.removeAttribute("class");
-      document.body.classList.add("compact-desmos");
-      return;
-    }
-
-    // Fallback → api
-    iframe.src = `templates/desmos_sketch.html?folder=${encodeURIComponent(
-      project.folder
-    )}`;
-    document.body.classList.add("compact-desmos");
+  if (mode === "redirect") {
+    const url = cfg.url || project?.external?.url;
+    if (!url) return console.error("Desmos redirect requires desmos.url");
+    const target = (overrideTarget || cfg.target || "_self").toLowerCase();
+    if (target === "_blank") window.open(url, "_blank", "noopener,noreferrer");
+    else window.location.href = url;
+    return;
   }
 
-  loadProject();
-
-  // ------------------------
-  // Start / Stop buttons
-  // ------------------------
-  document.getElementById("startBtn")?.addEventListener("click", () => {
-    if (!currentProject) return;
-    setIframeForProject(currentProject);
-  });
-
-  document.getElementById("stopBtn")?.addEventListener("click", () => {
-    if (iframe) iframe.src = "about:blank";
-  });
-
-  // ------------------------
-  // Optional: smaller navbar for open_project page
-  // ------------------------
-  const nav = document.querySelector("nav");
-  if (nav && window.location.pathname.endsWith("open_project.html")) {
-    nav.style.padding = "1rem 2rem";
+  if (mode === "external") {
+    const url =
+      cfg.url ||
+      project?.external?.url ||
+      "https://www.desmos.com/calculator?embed";
+    iframe.src = url;
+    setCompactMode(true);
+    return;
   }
 
-  // ------------------------
-  // Canvas capture (parent)
-  // ------------------------
-  (function setupProjectExport() {
-    const getIframe = () =>
-      document.querySelector("#projectFrame") ||
-      document.querySelector("iframe[data-role='project']") ||
-      document.querySelector("main iframe") ||
-      document.querySelector("iframe");
+  // api (default)
+  iframe.src = `${TEMPLATE_BY_TYPE.desmos}?folder=${encodeURIComponent(
+    project.folder
+  )}`;
+  setCompactMode(true);
+}
 
-    const downloadBtn = document.getElementById("downloadScreenshotButton");
-    const copyBtn = document.getElementById("copyScreenshotToClipboardButton");
+// ========================
+// Project loading
+// ========================
+async function resolveProjectFromQuery() {
+  // Direct folder mode (?folder=...&type=...)
+  const folderParam = getQueryParam("folder");
+  if (folderParam) {
+    return {
+      id: folderParam,
+      folder: decodeURIComponent(folderParam).replace(/^\/+/, ""),
+      type: getQueryParam("type") || "jsxgraph",
+      title: getQueryParam("title") || "",
+      desc: getQueryParam("desc") || "",
+    };
+  }
 
-    // Inject export-agent on iframe load (and if already loaded)
-    function injectAgentInto(iframe) {
-      try {
-        const doc = iframe.contentDocument;
-        if (!doc) return;
-        if (doc.querySelector('script[data-export-agent="1"]')) return;
-        const s = doc.createElement("script");
-        s.type = "module";
-        s.dataset.exportAgent = "1";
-        s.src = new URL("templates/common/export-agent.js", location.href).href;
-        doc.head.appendChild(s);
-      } catch (e) {
-        console.error("Failed to inject export-agent:", e);
-      }
+  // Data-driven mode (?project=...)
+  const projectId = getQueryParam("project");
+  if (!projectId) throw new Error("Provide ?project or ?folder");
+
+  const res = await fetch("projects/data.json");
+  const projects = await res.json();
+
+  const idxNum = Number(projectId);
+  const project = projects.find(
+    (p, idx) => p.id === projectId || p.folder === projectId || idx === idxNum
+  );
+
+  if (!project) throw new Error("Project not found");
+  project.folder = String(project.folder || project.id || projectId);
+  return project;
+}
+
+// ========================
+// Export agent injection
+// ========================
+function setupProjectExport() {
+  const getIframe = () =>
+    document.querySelector("#projectFrame") ||
+    document.querySelector("iframe[data-role='project']") ||
+    document.querySelector("main iframe") ||
+    document.querySelector("iframe");
+
+  const downloadBtn = $("downloadScreenshotButton");
+  const copyBtn = $("copyScreenshotToClipboardButton");
+
+  function injectAgentInto(iframe) {
+    try {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+      if (doc.querySelector('script[data-export-agent="1"]')) return;
+      const s = doc.createElement("script");
+      s.type = "module";
+      s.dataset.exportAgent = "1";
+      s.src = new URL("templates/common/export-agent.js", location.href).href;
+      doc.head.appendChild(s);
+    } catch (e) {
+      console.error("Failed to inject export-agent:", e);
     }
+  }
 
-    function hookIframe() {
+  function hookIframe() {
+    const iframe = getIframe();
+    if (!iframe) return;
+    iframe.addEventListener("load", () => injectAgentInto(iframe));
+    if (iframe.contentDocument?.readyState === "complete")
+      injectAgentInto(iframe);
+  }
+  hookIframe();
+  new MutationObserver(hookIframe).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+
+  function requestCapture({
+    scale = 3,
+    mime = "image/png",
+    quality = 0.92,
+    background = null,
+    preferDom = false,
+  } = {}) {
+    return new Promise((resolve, reject) => {
       const iframe = getIframe();
-      if (!iframe) return;
-      iframe.addEventListener("load", () => injectAgentInto(iframe));
-      if (iframe.contentDocument?.readyState === "complete") {
-        injectAgentInto(iframe);
-      }
-    }
-    hookIframe();
-    new MutationObserver(hookIframe).observe(document.documentElement, {
-      childList: true,
-      subtree: true,
+      if (!iframe) return reject(new Error("No project iframe found."));
+      const onMessage = (e) => {
+        const msg = e.data;
+        if (!msg) return;
+        if (msg.type === "captureReady" && msg.blob) {
+          removeEventListener("message", onMessage);
+          resolve(msg.blob);
+        } else if (msg.type === "captureError") {
+          removeEventListener("message", onMessage);
+          reject(new Error(msg.message || "Capture failed"));
+        }
+      };
+      addEventListener("message", onMessage);
+      iframe.contentWindow.postMessage(
+        { type: "requestCapture", scale, mime, quality, background, preferDom },
+        "*"
+      );
     });
+  }
 
-    // Await a single capture from the child (returns a Promise<Blob>)
-    function requestCapture({
-      scale = 3,
-      mime = "image/png",
-      quality = 0.92,
-      background = null,
-      preferDom = false,
-    } = {}) {
-      return new Promise((resolve, reject) => {
-        const iframe = getIframe();
-        if (!iframe) return reject(new Error("No project iframe found."));
-        const onMessage = (e) => {
-          const msg = e.data;
-          if (!msg) return;
-          if (msg.type === "captureReady" && msg.blob) {
-            removeEventListener("message", onMessage);
-            resolve(msg.blob);
-          } else if (msg.type === "captureError") {
-            removeEventListener("message", onMessage);
-            reject(new Error(msg.message || "Capture failed"));
-          }
-        };
-        addEventListener("message", onMessage);
-        iframe.contentWindow.postMessage(
-          {
-            type: "requestCapture",
-            scale,
-            mime,
-            quality,
-            background,
-            preferDom,
-          },
-          "*"
-        );
+  downloadBtn?.addEventListener("click", async () => {
+    try {
+      const blob = await requestCapture({
+        scale: 3,
+        mime: "image/png",
+        quality: 0.92,
+        background: null,
+        preferDom: false,
       });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = (document.title || "capture").replace(/\s+/g, "_") + ".png";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 1000);
+    } catch (err) {
+      console.error("Capture error:", err);
+      alert("Capture failed: " + err.message);
     }
+  });
 
-    // Download button → capture then download
-    downloadBtn?.addEventListener("click", async () => {
-      try {
-        const blob = await requestCapture({
-          scale: 3,
-          mime: "image/png",
-          quality: 0.92,
-          background: null,
-          preferDom: false,
-        });
+  copyBtn?.addEventListener("click", async () => {
+    try {
+      const mime = "image/png";
+      const blob = await requestCapture({
+        scale: 3,
+        mime,
+        quality: 0.92,
+        background: null,
+        preferDom: false,
+      });
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ [mime]: blob })]);
+        console.log("Screenshot copied to clipboard.");
+      } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download =
-          (document.title || "capture").replace(/\s+/g, "_") + ".png";
+        a.download = "capture.png";
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
           URL.revokeObjectURL(url);
           a.remove();
         }, 1000);
-      } catch (err) {
-        console.error("Capture error:", err);
-        alert("Capture failed: " + err.message);
       }
-    });
+    } catch (err) {
+      console.error("Clipboard export failed:", err);
+      alert("Copy to clipboard failed: " + err.message);
+    }
+  });
+}
 
-    // Copy button → capture then write to clipboard (needs user gesture)
-    copyBtn?.addEventListener("click", async () => {
-      try {
-        const mime = "image/png";
-        const blob = await requestCapture({
-          scale: 3,
-          mime,
-          quality: 0.92,
-          background: null,
-          preferDom: false,
-        });
+// ========================
+// Boot
+// ========================
+document.addEventListener("DOMContentLoaded", async () => {
+  const iframe = $(IFRAME_ID);
+  if (!iframe) return console.error("Missing #projectFrame");
 
-        if (navigator.clipboard && window.ClipboardItem) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ [mime]: blob }),
-          ]);
-          console.log("Screenshot copied to clipboard.");
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "capture.png";
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-            a.remove();
-          }, 1000);
-        }
-      } catch (err) {
-        console.error("Clipboard export failed:", err);
-        alert("Copy to clipboard failed: " + err.message);
-      }
-    });
-  })();
+  // smaller navbar on open_project
+  const nav = document.querySelector("nav");
+  if (nav && window.location.pathname.endsWith("open_project.html")) {
+    nav.style.padding = "1rem 2rem";
+  }
+
+  let currentProject = null;
+
+  try {
+    currentProject = await resolveProjectFromQuery();
+
+    if (currentProject.forceDesktop) forceDesktopViewport();
+
+    // title/desc
+    $("projectTitle")?.replaceChildren(currentProject.title || "");
+    $("projectDesc")?.replaceChildren(currentProject.desc || "");
+
+    setIframeForProject(currentProject);
+  } catch (e) {
+    console.error(e);
+    const container =
+      document.getElementById("projectContainer") ||
+      document.getElementById("projectContentWrapper");
+    if (container)
+      container.innerHTML = `<p>${e.message || "Failed to load project."}</p>`;
+  }
+
+  // Start/Stop
+  $("startBtn")?.addEventListener("click", () => {
+    if (!currentProject) return;
+    setIframeForProject(currentProject);
+  });
+  $("stopBtn")?.addEventListener("click", () => {
+    if (iframe) iframe.src = "about:blank";
+    setCompactMode(false);
+  });
+
+  setupProjectExport();
 });
