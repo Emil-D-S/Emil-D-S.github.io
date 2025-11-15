@@ -61,13 +61,8 @@ let particles = [];
 
 let numberOfParticles = 20;
 
-let textfield;
-
 function setup() {
   createCanvas(1000, 600); // creates canvas automatically
-
-  textfield = createInput();
-  textfield.position(20, 600);
 
   for (let i = 0; i < numberOfParticles; i++) {
     let p = new Particle(
@@ -81,7 +76,6 @@ function setup() {
 function draw() {
   //fill(255);
   background(0);
-  //new Text(frameRate().toFixed(2), 10, 20);
 
   if (mouseIsPressed) {
     for (let p of particles) {

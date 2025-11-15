@@ -7,6 +7,14 @@
     "files": [{ "name": "sketch.js", "type": "module" }],
     "image": "projects/js-clock/preview.png"
   },
+    {
+    "title": "Test sketch",
+    "desc": "test sketch",
+    "folder": "projects/test-project",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/car-pid/preview.png"
+  },
   {
     "title": "JSX demo",
     "folder": "projects/jsx-demo",

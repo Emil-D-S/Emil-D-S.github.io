@@ -1,87 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>p5 in iframe – working minimal</title>
-  <style>
-    html, body { height: 100%; margin: 0; background: #0b0b0f; }
-    #host { display: grid; place-items: center; padding: 16px; }
-    iframe.p5frame { width: min(100%, 900px); border: none; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
-  </style>
-</head>
-<body>
-  <div id="host"></div>
+  <head>
+    <meta charset="utf-8" />
+    <title>p5.js Project Loader</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <script>
-    // 1) HTML obsahu iframu – p5 z CDN + „global mode“ sketch
-    const srcdoc = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <style>
-    html, body { height:100%; margin:0; background:#121218; }
-    canvas { display:block; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-</head>
-<body>
-  <script>
-    // Global mode – p5 připojí setup()/draw() na window
-    let t = 0;
-    function setup() {
-      // Zvol pevnou velikost, nebo okno iframu: createCanvas(windowWidth, windowHeight)
-      createCanvas(640, 360);
-      noStroke();
-      // Nahlás výšku rodiči, aby iframe nebyl 18 px
-      setTimeout(() => {
-        const h = document.documentElement.scrollHeight;
-        parent.postMessage({ kind: 'p5-size', height: h }, '*');
-      }, 0);
-    }
-    function draw() {
-      background(20);
-      const cx = width/2, cy = height/2;
-      const r = 120 + 60 * sin(t);
-      fill(60, 160, 255);
-      circle(cx, cy, 2*r);
-      fill(255);
-      textSize(14);
-      text('p5.js in iframe – OK', 12, 20);
-      t += 0.02;
-    }
-    // Když chceš adaptivní výšku podle velikosti canvasu:
-    function windowResized() {
-      // resizeCanvas(windowWidth, windowHeight); // pokud používáš windowWidth/windowHeight
-      setTimeout(() => {
-        const h = document.documentElement.scrollHeight;
-        parent.postMessage({ kind: 'p5-size', height: h }, '*');
-      }, 0);
-    }
-  <\/script>
-</body>
-</html>`.trim();
+    <!-- p5.js – local copy, libs is parallel to templates -->
+    <script src="../libs/p5.min.js"></script>
 
-    // 2) Vytvoř iframe – POZOR na sandbox: musí mít allow-scripts, jinak p5 neběží
-    const iframe = document.createElement('iframe');
-    iframe.className = 'p5frame';
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin'); // klíčové
-    iframe.srcdoc = srcdoc;
-
-    // Základní výška, než dorazí zpráva z iframu
-    iframe.style.height = '380px';
-
-    document.getElementById('host').appendChild(iframe);
-
-    // 3) Převzetí výšky z iframu, aby se nehroutil na 18 px
-    window.addEventListener('message', (ev) => {
-      if (ev?.data?.kind === 'p5-size' && typeof ev.data.height === 'number') {
-        // + pár px rezervy na stíny/zaoblení
-        iframe.style.height = (ev.data.height + 2) + 'px';
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        /* no background color here */
       }
-    });
-  </script>
-</body>
+      canvas {
+        display: block; /* top-left, no auto-centering */
+        /* no margins, no max-width, no color */
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      function appendScript(src, isModule) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          if (isModule) s.type = "module";
+          s.onload = () => resolve();
+          s.onerror = (e) => reject(e);
+          document.body.appendChild(s);
+        });
+      }
+
+      function postCanvasSize(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const payload = {
+          type: "canvas-size",
+          width: rect.width,
+          height: rect.height,
+        };
+        window.parent?.postMessage(payload, "*");
+        window.parent?.postMessage(
+          { type: "p5_canvas_size", width: rect.width, height: rect.height },
+          "*"
+        );
+      }
+
+      function reportCanvasSize() {
+        const canvas = document.querySelector("canvas");
+        if (!canvas) return;
+        postCanvasSize(canvas);
+      }
+
+      (async () => {
+        const params = new URLSearchParams(window.location.search);
+        const folder = params.get("folder") || "";
+
+        if (!folder) return;
+
+        // p5 runtime check
+        if (typeof window.p5 !== "function") {
+          console.error("p5.js not loaded (check ../libs/p5.min.js)");
+          return;
+        }
+
+        // load sketch.js from folder
+        const normalizedFolder = folder.replace(/^\/+/, "");
+        const sketchPath = `../${normalizedFolder}/sketch.js`;
+
+        try {
+          await appendScript(sketchPath, false);
+        } catch (e) {
+          console.error("Failed to load sketch.js:", e);
+          return;
+        }
+
+        // give p5 a moment to create canvas, then report size
+        setTimeout(reportCanvasSize, 50);
+
+        const ro = new ResizeObserver(() => reportCanvasSize());
+        const mo = new MutationObserver(() => {
+          const c = document.querySelector("canvas");
+          if (c) ro.observe(c);
+        });
+        mo.observe(document.body, { childList: true, subtree: true });
+
+        const initialCanvas = document.querySelector("canvas");
+        if (initialCanvas) ro.observe(initialCanvas);
+      })().catch((err) => {
+        console.error("Loader error:", err);
+      });
+    </script>
+  </body>
 </html>
