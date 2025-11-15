@@ -1,4 +1,44 @@
 [
+    {
+    "title": "6DOF Antropomorphic robot",
+    "desc": "using Jacobian-based iterative inverse kinematics",
+    "folder": "projects/6DOF-antropo-robot",
+    "type": "three",
+    "forceDesktop": true,
+    "files": [
+      { "name": "shiftScroll.global.js", "type": "module" },
+      { "name": "paths.js", "type": "module" },
+      { "name": "robotState.js", "type": "module" },
+      { "name": "kinematics.js", "type": "module" },
+      { "name": "sketch.js", "type": "module" }
+    ],
+    "image": "projects/6DOF-antropo-robot/preview.png"
+  },
+    {
+    "title": "Ball balancing using PID controller",
+    "desc": "interactive PID controller",
+    "url": "pid-ball-balancing",
+    "folder": "projects/ball-balancing-PID-controller",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/ball-balancing-PID-controller/preview.png"
+  },
+    {
+    "title": "Linear transformation visualization",
+    "desc": "",
+    "folder": "projects/lin-alg-transform-visualization",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "image": "projects/lin-alg-transform-visualization/preview.png"
+  },
+    {
+    "title": "Discrete Fourier transform",
+    "desc": "Draw a function and view its approximation via Fourier transform",
+    "url": "inverse-fourier",
+    "folder": "projects/inverse-fourier",
+    "type": "p5",
+    "files": ["test.js", "dft.js", "functionGrapher.js", "sketch.js"]
+  },
   {
     "title": "JS Clock",
     "desc": "3D clock using Three.js library",
@@ -7,27 +47,29 @@
     "files": [{ "name": "sketch.js", "type": "module" }],
     "image": "projects/js-clock/preview.png"
   },
-    {
+  {
     "title": "Test sketch",
     "desc": "test sketch",
     "folder": "projects/test-project",
     "type": "p5",
     "files": ["sketch.js"],
-    "image": "projects/car-pid/preview.png"
+    "image": "projects/car-pid/preview.png",
+    "hidden": true
   },
   {
     "title": "JSX demo",
+    "desc": "",
     "folder": "projects/jsx-demo",
     "type": "jsxgraph",
-    "files": ["sketch.js"]
+    "files": ["sketch.js"],
+    "hidden": true
   },
   {
     "title": "Car Game",
     "desc": "car sim",
     "folder": "projects/car-pid",
     "type": "p5",
-    "files": ["sketch.js"],
-    "image": "projects/car-pid/preview.png"
+    "files": ["sketch.js"]
   },
   {
     "title": "Particle Attractor",
@@ -49,32 +91,7 @@
       "target": "_blank" 
     }
   },
-  {
-    "title": "Ball balancing using PID controller",
-    "desc": "interactive PID controller",
-    "url": "pid-ball-balancing",
-    "folder": "projects/ball-balancing-PID-controller",
-    "type": "p5",
-    "files": ["sketch.js"],
-    "image": "projects/ball-balancing-PID-controller/preview.png"
-  },
-  {
-    "title": "Discrete Fourier transform",
-    "desc": "Draw a function and view its approximation via Fourier transform",
-    "url": "inverse-fourier",
-    "folder": "projects/inverse-fourier",
-    "type": "p5",
-    "files": ["dft.js", "functionGrapher.js", "sketch.js"],
-    "image": "projects/inverse-fourier/preview.png"
-  },
-  {
-    "title": "Linear transformation visualization",
-    "desc": "",
-    "folder": "projects/lin-alg-transform-visualization",
-    "type": "p5",
-    "files": ["sketch.js"],
-    "image": "projects/lin-alg-transform-visualization/preview.png"
-  },
+
   {
     "title": "Pool prediction simulator WIP",
     "desc": "",
@@ -83,21 +100,7 @@
     "files": ["sketch.js"],
     "image": "assets/images/WIP.png"
   },
-  {
-    "title": "6DOF Antropomorphic robot",
-    "desc": "using Jacobian-based iterative inverse kinematics",
-    "folder": "projects/6DOF-antropo-robot",
-    "type": "three",
-    "forceDesktop": true,
-    "files": [
-      { "name": "shiftScroll.global.js", "type": "module" },
-      { "name": "paths.js", "type": "module" },
-      { "name": "robotState.js", "type": "module" },
-      { "name": "kinematics.js", "type": "module" },
-      { "name": "sketch.js", "type": "module" }
-    ],
-    "image": "projects/6DOF-antropo-robot/preview.png"
-  },
+
   {
     "title": "Scara robot simulation",
     "desc": "Simple inverse kinematics of Scara robot",

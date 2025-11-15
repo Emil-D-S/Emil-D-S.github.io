@@ -83,10 +83,7 @@
       }
 
       async function readFiles() {
-        let files = [
-          { name: "kinematics.js", type: "nomodule" },
-          { name: "sketch.js", type: "nomodule" },
-        ];
+        let files = [{ name: "sketch.js", type: "nomodule" }];
 
         try {
           const res = await fetch(DATA_URL);

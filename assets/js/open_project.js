@@ -249,7 +249,8 @@ function setupProjectExport() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = (document.title || "capture").replace(/\s+/g, "_") + ".png";
+      const folderName = currentProject?.folder?.split("/").pop() || "capture";
+      a.download = folderName + ".png";
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -297,6 +298,8 @@ function setupProjectExport() {
 // ========================
 // Boot
 // ========================
+
+let currentProject = null;
 document.addEventListener("DOMContentLoaded", async () => {
   const iframe = $(IFRAME_ID);
   if (!iframe) return console.error("Missing #projectFrame");
@@ -306,8 +309,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (nav && window.location.pathname.endsWith("open_project.html")) {
     nav.style.padding = "1rem 2rem";
   }
-
-  let currentProject = null;
 
   try {
     currentProject = await resolveProjectFromQuery();

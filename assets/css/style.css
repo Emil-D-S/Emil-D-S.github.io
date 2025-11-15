@@ -3,6 +3,7 @@
 ========================================= */
 :root {
   --bg: #0a100d;
+
   --border-color: rgba(255, 255, 255, 0.1);
   --text: #d6d5c9;
   --accent: #fff;
@@ -303,7 +304,7 @@ nav i {
 /* body:is([data-page="open_project"]) #header, */
 /* body:is([data-page="open_project"]) nav, */
 body:is([data-page="open_project"]) .navsect {
-  min-height: 48px !important;
+  min-height: 24px !important;
   padding: 0.5rem 1rem !important;
   font-size: 1rem !important;
 }
@@ -315,6 +316,7 @@ main.content {
   flex: 1;
   overflow-y: scroll; /* always reserves scrollbar space */
   padding: 1rem;
+  /* padding-top: 0.5rem; */
 }
 /*
 /* ---- Scrollbar styling ---- */
@@ -349,7 +351,7 @@ main.content {
   border-radius: 8px;
   padding: 1rem;
   max-width: 800px;
-  margin: 0 auto 1rem auto; /* center and space below */
+  margin: 0.5rem auto 0.5rem auto; /* center and space below */
 }
 
 /* =========================================
@@ -376,11 +378,6 @@ main.content {
   margin: 0; /* remove any top/bottom spacing */
   width: 100%;
 }
-
-/* img.projectPreviewImg {
-  aspect-ratio: 16 / 9; fixed ratio
-  object-fit: cover;
-} */
 
 /* =========================================
    VIEW TOGGLE BUTTONS
@@ -660,11 +657,3 @@ canvas {
   background: #fff;
   border: 1px solid var(--border-color);
 }
-
-/* Ensure main and body have no extra spacing */
-/* body,
-html,
-main.content {
-  margin: 0;
-  padding: 0;
-} */

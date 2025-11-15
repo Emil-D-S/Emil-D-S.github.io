@@ -60,6 +60,15 @@ async function loadProjects() {
   const defaultImage = "assets/images/no_photo_drawn.png";
 
   projects.forEach((p) => {
+    if (p.hidden == true) {
+      return;
+    }
+
+    if (!p.image) {
+      const folderName = p.folder.split("/").pop();
+      p.image = `${p.folder}/${folderName}.png`;
+    }
+
     const el = document.createElement("article");
     el.className = "project";
 

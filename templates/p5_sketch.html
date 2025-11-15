@@ -5,7 +5,7 @@
     <title>p5.js Project Loader</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <!-- p5.js – local copy, libs is parallel to templates -->
+    <!-- p5.js – lokální kopie, libs je paralelně k templates -->
     <script src="../libs/p5.min.js"></script>
 
     <style>
@@ -14,24 +14,106 @@
         height: 100%;
         margin: 0;
         padding: 0;
-        /* no background color here */
       }
       canvas {
-        display: block; /* top-left, no auto-centering */
-        /* no margins, no max-width, no color */
+        display: block; /* žádné centerování – nahoře vlevo */
       }
     </style>
   </head>
   <body>
     <script type="module">
-      function appendScript(src, isModule) {
+      const DATA_URL = new URL("../projects/data.json", import.meta.url).href;
+
+      // chytni chyby ze sketch/scriptů
+      window.onerror = function (msg, url, line, col, err) {
+        console.error(
+          "[p5_loader] Uncaught error:",
+          msg,
+          "at",
+          url,
+          line + ":" + col,
+          err
+        );
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      let folder = params.get("folder") || "";
+      folder = decodeURIComponent(folder).replace(/^\/+/, "");
+      if (!folder) {
+        console.error("[p5_loader] folder not specified");
+        throw new Error("No folder specified");
+      }
+
+      function log(...a) {
+        console.log("[p5_loader]", ...a);
+      }
+
+      async function readFiles() {
+        // default jen sketch.js
+        let files = [{ name: "sketch.js", type: "nomodule" }];
+
+        try {
+          const res = await fetch(DATA_URL);
+          if (!res.ok) throw new Error("data.json fetch failed: " + res.status);
+          const list = await res.json();
+
+          let proj = null;
+          if (Array.isArray(list)) {
+            proj = list.find((p) => p.folder === folder);
+          } else if (typeof list === "object" && list !== null) {
+            if (list[folder]) proj = list[folder];
+            else {
+              for (const k of Object.keys(list)) {
+                if (list[k] && list[k].folder === folder) {
+                  proj = list[k];
+                  break;
+                }
+              }
+            }
+          }
+
+          if (proj && Array.isArray(proj.files) && proj.files.length) {
+            files = proj.files
+              .map((f) => {
+                if (typeof f === "string") return { name: f, type: "nomodule" };
+                if (f && typeof f === "object") {
+                  const name = f.name || f.file || f.src;
+                  const type = (f.type || "nomodule").toLowerCase();
+                  return {
+                    name,
+                    type: type === "module" ? "module" : "nomodule",
+                  };
+                }
+                return null;
+              })
+              .filter(Boolean);
+          } else {
+            log(
+              "No project entry in data.json; using default:",
+              files.map((f) => f.name)
+            );
+          }
+        } catch (e) {
+          console.warn(
+            "[p5_loader] couldn't read data.json; using defaults",
+            e
+          );
+        }
+        return files;
+      }
+
+      function appendScript(srcHref, type = "nomodule") {
         return new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = src;
-          if (isModule) s.type = "module";
-          s.onload = () => resolve();
-          s.onerror = (e) => reject(e);
-          document.body.appendChild(s);
+          const script = document.createElement("script");
+          script.defer = true;
+          script.onerror = () => reject(new Error("Failed to load " + srcHref));
+          script.onload = () => {
+            console.log("loaded", srcHref);
+            resolve(srcHref);
+          };
+          script.src = new URL(srcHref, import.meta.url).href;
+          if (type === "module") script.type = "module";
+          document.body.appendChild(script);
         });
       }
 
@@ -51,35 +133,40 @@
 
       function reportCanvasSize() {
         const canvas = document.querySelector("canvas");
+        console.log("[p5_loader] reportCanvasSize, canvas =", canvas);
         if (!canvas) return;
         postCanvasSize(canvas);
       }
 
-      (async () => {
-        const params = new URLSearchParams(window.location.search);
-        const folder = params.get("folder") || "";
-
-        if (!folder) return;
-
-        // p5 runtime check
+      async function loadAll() {
         if (typeof window.p5 !== "function") {
           console.error("p5.js not loaded (check ../libs/p5.min.js)");
           return;
         }
 
-        // load sketch.js from folder
-        const normalizedFolder = folder.replace(/^\/+/, "");
-        const sketchPath = `../${normalizedFolder}/sketch.js`;
+        const fileList = await readFiles();
+        const toLoad = fileList.map((f) => ({
+          href: `../${folder}/${f.name.replace(/^\/+/, "")}`,
+          type: f.type,
+        }));
 
+        for (const f of toLoad) {
+          log("Loading", f.href, "as", f.type);
+          await appendScript(f.href, f.type);
+        }
+
+        log("All project files loaded, creating p5 instance");
+
+        // explicitně vytvoř p5 instanci, aby se spustil global-mode sketch
         try {
-          await appendScript(sketchPath, false);
+          new window.p5();
         } catch (e) {
-          console.error("Failed to load sketch.js:", e);
+          console.error("[p5_loader] error creating p5 instance:", e);
           return;
         }
 
-        // give p5 a moment to create canvas, then report size
-        setTimeout(reportCanvasSize, 50);
+        // nech p5 chvilku na vytvoření canvasu, pak nahlas velikost
+        setTimeout(reportCanvasSize, 100);
 
         const ro = new ResizeObserver(() => reportCanvasSize());
         const mo = new MutationObserver(() => {
@@ -90,8 +177,10 @@
 
         const initialCanvas = document.querySelector("canvas");
         if (initialCanvas) ro.observe(initialCanvas);
-      })().catch((err) => {
-        console.error("Loader error:", err);
+      }
+
+      loadAll().catch((err) => {
+        console.error("[p5_loader] loader error:", err);
       });
     </script>
   </body>

@@ -1,3 +1,5 @@
+console.log("loaded");
+
 // points: Array of p5.Vector with .x (time) and .y (value)
 // opts.period  : optional known period T (seconds or same units as x)
 // opts.tol     : spacing tolerance (default 1e-6 * median(dx))

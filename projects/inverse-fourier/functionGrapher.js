@@ -1,3 +1,5 @@
+console.log("loaded");
+
 class Trace {
   constructor(funcOrData, { strokeColor = "gray", strokeWeight = 1 } = {}) {
     this.strokeColor = strokeColor;
@@ -11,7 +13,7 @@ class Trace {
       this.traceData = null;
     } else {
       this.traceData = f; // array or Float32Array of pixels
-      this.func = null;   // will be built later by FunctionGrapher
+      this.func = null; // will be built later by FunctionGrapher
     }
     return this;
   }
@@ -69,19 +71,19 @@ class FunctionGrapher {
   draw() {
     const originY = height / 2;
     const originX = map(0, this.startX, this.endX, 0, width);
-  
+
     if (this.showAxes) {
       stroke(this.axesCol);
       if (originX >= 0 && originX <= width) line(originX, 0, originX, height);
       line(0, originY, width, originY);
     }
-  
-    this.traces.forEach(t => {
+
+    this.traces.forEach((t) => {
       // if this trace only has raw data, rebuild func from it
       if (!t.func && t.traceData) {
         t.func = this.buildFunctionFromTrace(t.traceData);
       }
-  
+
       noFill();
       stroke(t.strokeColor);
       strokeWeight(t.strokeWeight);
@@ -96,7 +98,7 @@ class FunctionGrapher {
   }
 
   buildFunctionFromTrace(trace) {
-    return x => {
+    return (x) => {
       const px = Math.round(map(x, this.startX, this.endX, 0, width));
       const py = trace[px];
       if (Number.isNaN(py) || py === undefined) return 0;

@@ -1,6 +1,6 @@
 setJSXBoxSize({
-  width: 800, // or '80vw' / 'min(90vw, 900px)'
-  height: 800,
+  width: 700, // or '80vw' / 'min(90vw, 900px)'
+  height: 700,
   boxBg: "#FFFFFF", // container color (optional)
 });
 
