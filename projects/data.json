@@ -1,4 +1,11 @@
 [
+      {
+    "title": "Inverted pendulum on a cart",
+    "desc": "",
+    "folder": "projects/inverted-pendulum-on-cart",
+    "type": "p5",
+    "files": ["sketch.js"]
+  },
     {
     "title": "6DOF Antropomorphic robot",
     "desc": "using Jacobian-based iterative inverse kinematics",

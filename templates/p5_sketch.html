@@ -7,6 +7,8 @@
 
     <!-- p5.js – lokální kopie, libs je paralelně k templates -->
     <script src="../libs/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.21"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ccapture.js@1.1.0/build/CCapture.min.js"></script>
 
     <style>
       html,
@@ -15,14 +17,87 @@
         margin: 0;
         padding: 0;
       }
-      canvas {
-        display: block; /* žádné centerování – nahoře vlevo */
+      main {
+        position: relative; /* referenční box pro absolutní pozicování */
+      }
+
+      #canvasWrapper {
+        position: "relative";
+        display: "inline-block";
+      }
+
+      canvas.p5Canvas {
+        display: block;
+      }
+
+      .lil-gui.lil-root {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        z-index: 10; /* nad canvas */
       }
     </style>
   </head>
   <body>
     <script type="module">
       const DATA_URL = new URL("../projects/data.json", import.meta.url).href;
+
+      window.createGuiForCanvas = function (guiOptions = {}, align = "right") {
+        // find p5 canvas (adjust selector if needed)
+        const canvas =
+          document.querySelector("canvas.p5Canvas") ||
+          document.querySelector("canvas");
+
+        if (!canvas) {
+          console.warn("[p5_loader] createGuiForCanvas: no canvas found");
+          return new lil.GUI(guiOptions); // fallback
+        }
+
+        let wrapper = canvas.parentElement;
+
+        // if not already wrapped
+        if (!wrapper || wrapper.id !== "canvasWrapper") {
+          const parent = canvas.parentElement;
+
+          wrapper = document.createElement("div");
+          wrapper.id = "canvasWrapper";
+
+          // can also be done purely in CSS, but this is safe:
+          wrapper.style.position = "relative";
+          wrapper.style.display = "inline-block";
+
+          parent.insertBefore(wrapper, canvas);
+          wrapper.appendChild(canvas);
+        }
+
+        // merge user options, but enforce our container
+        const options = {
+          ...guiOptions,
+          container: wrapper,
+        };
+
+        const gui = new lil.GUI(options);
+
+        const el =
+          gui.domElement ||
+          wrapper.querySelector(".lil-gui.lil-root") ||
+          wrapper.querySelector(".lil-gui");
+
+        if (el) {
+          el.style.position = "absolute";
+          el.style.top = "5px";
+          if (String(align).toLowerCase() === "left") {
+            el.style.left = "5px";
+            el.style.right = "";
+          } else {
+            el.style.right = "5px";
+            el.style.left = "";
+          }
+          el.style.zIndex = "10";
+        }
+
+        return gui;
+      };
 
       // chytni chyby ze sketch/scriptů
       window.onerror = function (msg, url, line, col, err) {
