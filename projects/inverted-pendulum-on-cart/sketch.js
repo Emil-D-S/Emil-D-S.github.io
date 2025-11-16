@@ -342,7 +342,7 @@ function draw() {
   const maxAngle = (15 * Math.PI) / 180;
   angleRef = Math.max(-maxAngle, Math.min(maxAngle, angleRef));
 
-  // ----- INNER LOOP: angle PD → force (KEEP SAME SIGN PATTERN AS BEFORE) -----
+  // ----- INNER LOOP: angle PD → force -----
 
   const angle = toMinusPiToPi(car.angle);
   const angVel = car.angVel;

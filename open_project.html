@@ -25,11 +25,34 @@
       rel="stylesheet"
     />
 
+    <script>
+      function isPhoneMode() {
+        // adjust threshold as you like
+        return window.innerWidth < 1110;
+      }
+
+      function updatePhoneWarningVisibility() {
+        const warning = document.getElementById("phoneWarning");
+        if (!warning) return;
+
+        warning.style.display = isPhoneMode() ? "block" : "none";
+      }
+
+      // run once after DOM is ready
+      document.addEventListener(
+        "DOMContentLoaded",
+        updatePhoneWarningVisibility
+      );
+
+      // update when user resizes / rotates / DevTools changes viewport
+      window.addEventListener("resize", updatePhoneWarningVisibility);
+    </script>
+
     <link rel="stylesheet" href="assets/css/style.css" />
   </head>
   <body data-page="open_project">
     <div id="header"></div>
-
+    <div id="phoneWarning">Warning: not suitable for small screens</div>
     <main class="content">
       <div id="projectContentWrapper">
         <div id="projectHeader">

@@ -76,7 +76,9 @@
     "desc": "car sim",
     "folder": "projects/car-pid",
     "type": "p5",
-    "files": ["sketch.js"]
+    "files": ["sketch.js"],
+    "image": "assets/images/WIP.png"
+
   },
   {
     "title": "Particle Attractor",
