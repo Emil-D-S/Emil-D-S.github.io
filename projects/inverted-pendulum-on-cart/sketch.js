@@ -1,71 +1,76 @@
 class Cart {
-  constructor(x, groundLevel) {
-    this.g = 1;
+  constructor(initialX, groundY, gravity) {
+    this.g = gravity;
 
     this.cartFriction = 0;
-    this.pendulumFriction = 1;
+    this.pendulumFriction = 0;
 
-    this.u = 0;
+    this.controlInput = 0;
 
-    this.pos = x;
-    this.vel = 0;
-    this.acc = 0;
-    this.groundLevel = groundLevel;
+    this.x = initialX;
+    this.xVel = 0;
+    this.xAcc = 0;
+    this.groundY = groundY;
 
-    this.angle = 0.1;
-    this.angVel = 0;
-    this.angAcc = 0;
+    this.theta = 0.2;
+    this.thetaVel = 0;
+    this.thetaAcc = 0;
 
-    this.length = 200;
-    this.pointMass = 1;
+    this.pendulumLength = 200;
+    this.pendulumMass = 1;
     this.massRadius = 20;
 
     this.cartMass = 10;
 
-    this.wheelRadius = 25;
-    this.wheelXOffset = -5;
-    this.wheelYOffset = 45;
+    this.cartCenter = createVector(this.x, 0);
+
+    this.wheelRadius = 20;
+    this.wheelYOffset = -5;
+    this.wheelXOffset = 45;
     this.cartHeight = 35;
   }
 
   update() {
-    const u = this.u;
-    const m = this.pointMass;
+    const controlInput = this.controlInput;
+    const m = this.pendulumMass;
     const M = this.cartMass;
-    const l = this.length;
+    const l = this.pendulumLength;
     const g = this.g;
-    const xd = this.vel;
-    const th = this.angle;
-    const thd = this.angVel;
-    const bx = this.cartFriction ?? 0; // N·s/m (cart viscous friction)
-    const bth = this.pendulumFriction ?? 0; // N·m·s (joint damping)
+    const xVel = this.xVel;
+    const theta = this.theta;
+    const thetaVel = this.thetaVel;
+    const bx = this.cartFriction ?? 0;
+    const bth = this.pendulumFriction ?? 0;
 
-    const s = sin(th);
-    const c = cos(th);
+    const s = sin(theta);
+    const c = cos(theta);
 
     const denom = M + m * s * s;
 
-    // cart acceleration x¨
-    this.acc = (u - bx * xd + m * l * s * thd ** 2 - m * g * s * c) / denom;
+    this.xAcc =
+      (controlInput - bx * xVel + m * l * s * thetaVel ** 2 - m * g * s * c) /
+      denom;
 
-    // angular acceleration θ¨
-    this.angAcc =
-      ((M + m) * g * s - m * l * thd ** 2 * s * c - u * c - bth * thd) /
+    this.thetaAcc =
+      ((M + m) * g * s -
+        m * l * thetaVel ** 2 * s * c -
+        controlInput * c -
+        bth * thetaVel) /
       (l * denom);
 
-    this.vel += this.acc * 0.9;
-    this.pos += this.vel;
+    this.xVel += this.xAcc * 0.9;
+    this.x += this.xVel;
 
-    this.angVel += this.angAcc * 0.9;
-    this.angle += this.angVel;
+    this.thetaVel += this.thetaAcc * 0.9;
+    this.theta += this.thetaVel;
 
-    this.acc = 0;
-    this.accVel = 0;
-    this.u = 0;
+    this.xAcc = 0;
+    this.velAcc = 0;
+    this.controlInput = 0;
   }
 
-  applyForce(f) {
-    this.u += f / this.pointMass;
+  applyForce(force) {
+    this.controlInput += force;
   }
 
   show() {
@@ -73,27 +78,26 @@ class Cart {
     angleMode(RADIANS);
     noFill();
 
-    let cartCenter = createVector(
-      this.pos,
-      this.groundLevel -
-        this.wheelRadius -
-        this.cartHeight / 2 -
-        this.wheelXOffset
+    this.cartCenter = createVector(
+      this.x,
+      this.groundY - this.wheelRadius - this.cartHeight / 2 - this.wheelYOffset
     );
 
     this.massPos = createVector(
-      cartCenter.x + this.length * sin(this.angle),
-      cartCenter.y - this.length * cos(this.angle)
+      this.cartCenter.x + this.pendulumLength * sin(this.theta),
+      this.cartCenter.y - this.pendulumLength * cos(this.theta)
     );
 
     this.lineEndPos = createVector(
-      cartCenter.x + (this.length - this.massRadius) * sin(this.angle),
-      cartCenter.y - (this.length - this.massRadius) * cos(this.angle)
+      this.cartCenter.x +
+        (this.pendulumLength - this.massRadius) * sin(this.theta),
+      this.cartCenter.y -
+        (this.pendulumLength - this.massRadius) * cos(this.theta)
     );
 
     line(
-      cartCenter.x,
-      cartCenter.y - this.cartHeight / 2,
+      this.cartCenter.x,
+      this.cartCenter.y - this.cartHeight / 2,
       this.lineEndPos.x,
       this.lineEndPos.y
     );
@@ -103,69 +107,77 @@ class Cart {
     noFill();
     push();
     strokeWeight(10);
-    point(cartCenter.x, cartCenter.y - this.cartHeight / 2);
+    point(this.cartCenter.x, this.cartCenter.y - this.cartHeight / 2);
     pop();
 
-    rect(cartCenter.x, cartCenter.y, 100, this.cartHeight);
+    rect(this.cartCenter.x, this.cartCenter.y, 100, this.cartHeight);
     circle(
-      cartCenter.x + this.wheelYOffset,
-      cartCenter.y + this.cartHeight / 2 + this.wheelXOffset,
+      this.cartCenter.x + this.wheelXOffset,
+      this.cartCenter.y + this.cartHeight / 2 + this.wheelYOffset,
       this.wheelRadius * 2
     );
     circle(
-      cartCenter.x - this.wheelYOffset,
-      cartCenter.y + this.cartHeight / 2 + this.wheelXOffset,
+      this.cartCenter.x - this.wheelXOffset,
+      this.cartCenter.y + this.cartHeight / 2 + this.wheelYOffset,
       this.wheelRadius * 2
     );
-    let phi = (this.pos / width) * (width / this.wheelRadius);
+    let wheelAngle = (this.x / width) * (width / this.wheelRadius);
 
-    let n = 8;
-    for (let i = 0; i < n; i++) {
+    let spokeCount = 8;
+    for (let i = 0; i < spokeCount; i++) {
       line(
-        cartCenter.x + this.wheelYOffset,
-        cartCenter.y + this.cartHeight / 2 + this.wheelXOffset,
-        cartCenter.x +
-          this.wheelYOffset +
-          this.wheelRadius * Math.cos((1 / n) * TWO_PI * i + phi),
-        cartCenter.y +
+        this.cartCenter.x + this.wheelXOffset,
+        this.cartCenter.y + this.cartHeight / 2 + this.wheelYOffset,
+        this.cartCenter.x +
+          this.wheelXOffset +
+          this.wheelRadius *
+            Math.cos((1 / spokeCount) * TWO_PI * i + wheelAngle),
+        this.cartCenter.y +
           this.cartHeight / 2 +
-          this.wheelRadius * Math.sin((1 / n) * TWO_PI * i + phi) +
-          this.wheelXOffset
+          this.wheelRadius *
+            Math.sin((1 / spokeCount) * TWO_PI * i + wheelAngle) +
+          this.wheelYOffset
       );
       line(
-        cartCenter.x - this.wheelYOffset,
-        cartCenter.y + this.cartHeight / 2 + this.wheelXOffset,
-        cartCenter.x -
-          this.wheelYOffset +
-          this.wheelRadius * Math.cos((1 / n) * TWO_PI * i + phi),
-        cartCenter.y +
+        this.cartCenter.x - this.wheelXOffset,
+        this.cartCenter.y + this.cartHeight / 2 + this.wheelYOffset,
+        this.cartCenter.x -
+          this.wheelXOffset +
+          this.wheelRadius *
+            Math.cos((1 / spokeCount) * TWO_PI * i + wheelAngle),
+        this.cartCenter.y +
           this.cartHeight / 2 +
-          this.wheelRadius * Math.sin((1 / n) * TWO_PI * i + phi) +
-          this.wheelXOffset
+          this.wheelRadius *
+            Math.sin((1 / spokeCount) * TWO_PI * i + wheelAngle) +
+          this.wheelYOffset
       );
     }
   }
 
   resetCart() {
-    this.pos = width / 2;
-    this.vel = 0;
-    this.acc = 0;
+    this.x = width / 2;
+    this.xVel = 0;
+    this.xAcc = 0;
 
-    this.angle = 0;
-    this.angVel = 0;
-    this.angAcc = 0;
-    this.u = 0;
+    this.theta = 0;
+    this.thetaVel = 0;
+    this.thetaAcc = 0;
+    this.controlInput = 0;
   }
 }
 
 // ================================= CART CLASS ======================================
 
-groundLevel = 500;
+let groundY = 400;
 
-let pendulumFell = false;
+let overloaded = false;
+
+let controlModes = { balance: 0, dampen: 1, swingUp: 2 };
+
+let CONTROL_MODE = controlModes.balance;
 
 let xRef;
-let car;
+let cart;
 
 let gui;
 
@@ -179,6 +191,7 @@ let guiParams = {
   enabledP: true,
   pP: 0.0001,
   pD: 0.007,
+  enabledDamping: true,
 };
 
 let infoParams = {
@@ -191,15 +204,22 @@ let infoParams = {
   acc: 0,
 };
 
-let positionControlFolder;
+let physicalParams = {
+  cartFriction: 0,
+  pendulumFriction: 0,
+  pendulumMass: 1,
+  cartMass: 10,
+};
 
-let refPosSlider;
+let positionControlFolder;
 
 let resetCartBtn;
 
+let topTheta;
+
 function setup() {
   createCanvas(1000, 600);
-  frameRate(60); // Match capture framerate
+  frameRate(60);
 
   gui = createGuiForCanvas({});
   infoGui = createGuiForCanvas({}, "left").hide();
@@ -211,42 +231,54 @@ function setup() {
   infoGui.add(infoParams, "vel").listen().disable().decimals(3);
   infoGui.add(infoParams, "acc").listen().disable().decimals(3);
 
-  angleControlFolder = gui.addFolder("Regulator for balancing pendulum");
+  physicalParamsFolder = gui.addFolder("Physical parameters").close();
+  angleControlFolder = gui.addFolder("Regulator for pendulum angle");
   positionControlFolder = gui.addFolder("Regulator for cart position");
 
-  const enabledACtrl = angleControlFolder
+  physicalParamsFolder
+    .add(physicalParams, "pendulumFriction")
+    .name("pendulum friction");
+  physicalParamsFolder
+    .add(physicalParams, "cartFriction")
+    .name("cart friction");
+  physicalParamsFolder
+    .add(physicalParams, "pendulumMass")
+    .name("pendulum mass");
+  physicalParamsFolder.add(physicalParams, "cartMass").name("cart mass");
+
+  const enabledAngleCtrl = angleControlFolder
     .add(guiParams, "enabledA")
-    .name("enabled");
-  angleControlFolder.add(guiParams, "aP").min(0).name("Proportional coeff.");
-  angleControlFolder.add(guiParams, "aD").min(0).name("Derivate coeff.");
+    .name("balance");
+  angleControlFolder.add(guiParams, "enabledDamping").name("damp when fallen");
+  angleControlFolder
+    .add(guiParams, "aP")
+    .min(0)
+    .max(50)
+    .name("Proportional coeff.");
+  angleControlFolder
+    .add(guiParams, "aD")
+    .min(0)
+    .max(500)
+    .name("Derivate coeff.");
 
-  const enabledPCtrl = positionControlFolder
+  const enabledPositionCtrl = positionControlFolder
     .add(guiParams, "enabledP")
-    .name("enabled");
-  positionControlFolder.add(guiParams, "pP").min(0).name("P");
-  positionControlFolder.add(guiParams, "pD").min(0).name("D");
+    .name("cart position control");
+  positionControlFolder.add(guiParams, "pP").min(0).max(0.001).name("P");
+  positionControlFolder.add(guiParams, "pD").min(0).max(0.02).name("D");
 
-  enabledACtrl.onChange((value) => {
-    enabledPCtrl.enable(value);
+  enabledAngleCtrl.onChange((value) => {
+    enabledPositionCtrl.enable(value);
     positionControlFolder.controllers.forEach((ctrl) => {
-      if (ctrl !== enabledPCtrl) ctrl.enable(value);
+      if (ctrl !== enabledPositionCtrl) ctrl.enable(value);
     });
   });
 
   xRef = width / 2;
 
-  //   refPosSlider = createSlider(10, width - 8, width / 2);
-  //   refPosSlider.size(width - 2);
-  //   refPosSlider.position(0, groundLevel + 10);
-
-  //   refPosSlider.style("height", "12px"); // thickness
-  //   refPosSlider.style("background", "#333333"); // whole track color
-  //   refPosSlider.style("border-radius", "6px");
-  //   refPosSlider.style("outline", "none");
-
   resetCartBtn = createButton("RESET CART");
   resetCartBtn.size(100, 50);
-  resetCartBtn.position(width / 2 - 100 / 2, groundLevel + 40);
+  resetCartBtn.position(width / 2 - 100 / 2, groundY + 50);
   resetCartBtn.style("background-color", "#0058e6ff");
   resetCartBtn.style("color", "#ffffffff");
   resetCartBtn.style("font-style", "bold");
@@ -254,157 +286,218 @@ function setup() {
   resetCartBtn.style("border-color", "#ffffff");
   resetCartBtn.style("box-shadow", "none");
 
-  car = new Cart(500, groundLevel);
+  cart = new Cart(500, groundY, g); // =============================cart==================
 
-  resetCartBtn.mousePressed(() => car.resetCart());
+  resetCartBtn.mousePressed(() => {
+    cart.resetCart();
+    CONTROL_MODE = controlModes.balance;
+  });
 }
 
-let settingSP = false;
+let settingSetpoint = false;
+
+const g = 1;
+
+const maxControlActionForce = 100;
+
+const sliderPinHeadSize = 10;
 
 function draw() {
   background("#0058e6ff");
 
-  //#region drawBackground
+  cart.cartFriction = physicalParams.cartFriction;
+  cart.pendulumFriction = physicalParams.pendulumFriction;
+  cart.cartMass = physicalParams.cartMass;
+  cart.pendulumMass = physicalParams.pendulumMass;
 
-  let groundThickness = 101;
+  let groundThickness = 40;
 
   stroke("#ffffff");
   strokeWeight(1);
 
-  line(0, groundLevel, width, groundLevel);
+  line(0, groundY, width, groundY);
   for (let i = -50; i < 100; i++) {
-    line(
-      i * 10,
-      groundLevel + groundThickness,
-      groundThickness + i * 10,
-      groundLevel
-    );
+    line(i * 10, groundY + groundThickness, groundThickness + i * 10, groundY);
   }
-  line(0, groundLevel + groundThickness, width, groundLevel + groundThickness);
+  line(0, groundY + groundThickness, width, groundY + groundThickness);
   fill("#0058e6ff");
   rectMode(CORNERS);
-  rect(0, groundLevel + 10, width, groundLevel + 30);
-  line(xRef, groundLevel + 20, xRef, groundLevel - 20);
+  rect(0, groundY + 10, width, groundY + 30);
+  //line(xRef, groundY + 20, xRef, groundY - 20);
+  drawArrow(createVector(xRef, groundY + 20), createVector(0, -35), "white");
   fill(255);
-  circle(xRef, groundLevel + 20, 10);
+  circle(xRef, groundY + 20, sliderPinHeadSize);
 
+  textSize(17);
   push();
   noStroke();
   fill("#ffffff");
   text(
-    "> use slider under the cart to set setpoint \n> apply force to the cart by clicking next to it \n> try (slightly) changing the coefficients\n> disable whole or just positional regulation",
+    `> use slider under the cart to set setpoint
+> apply force to the cart by clicking next to it
+> try changing physical parameters
+> try changing the coefficients
+> toggle whole or just positional regulation
+> toggle damping when pendulum falls
+    `,
     300,
     30
   );
   text(
     "Pendulum angle: " +
-      (toMinusPiToPi(car.angle) * (180 / PI)).toFixed(2) +
+      (wrapToMinusPiToPi(cart.theta) * (180 / PI)).toFixed(2) +
       "°",
     15,
     30
   );
   text(
     "Pendulum ang. vel: " +
-      (toMinusPiToPi(car.angVel) * (180 / PI)).toFixed(2) +
-      "°",
+      (wrapToMinusPiToPi(cart.thetaVel) * (180 / PI)).toFixed(2) +
+      "° / frame",
     15,
     60
   );
-  text("Cart position: " + car.pos.toFixed(2), 15, 90);
-  text("Cart velocity: " + car.vel.toFixed(2), 15, 120);
+  text("Cart position: " + cart.x.toFixed(2), 15, 90);
+  text("Cart velocity: " + cart.xVel.toFixed(2), 15, 120);
   stroke("#ff0000");
-  pendulumFell ? text("Pendulum fell", 15, 180) : () => {};
+  CONTROL_MODE == controlModes.dampen
+    ? text("Pendulum fell", 15, 180 + 30 * 5)
+    : () => {};
   pop();
-  //   text("Cart acc: " + car.acc.toFixed(2), 15, 180);
-  textSize(17);
 
-  //#endregion
+  const normalizedTheta = wrapToMinusPiToPi(cart.theta);
+  const thetaDown = wrapToMinusPiToPi(cart.theta + PI);
 
-  abs(toMinusPiToPi(car.angle)) > HALF_PI
-    ? (pendulumFell = true)
-    : (pendulumFell = false);
+  let maxAngleBeforeOverload = atan(
+    maxControlActionForce / ((cart.pendulumMass + cart.cartMass) * g)
+  );
 
-  if (settingSP) {
+  if (
+    CONTROL_MODE == controlModes.balance &&
+    abs(normalizedTheta) > maxAngleBeforeOverload
+  ) {
+    CONTROL_MODE = controlModes.dampen;
+  }
+
+  if (settingSetpoint) {
     xRef = mouseX;
   }
 
-  //   xRef = refPosSlider.value();
+  const cartPositionError = xRef - cart.x;
+  const cartVelocityError = cart.xVel;
 
-  // ----- OUTER LOOP: position PD → angleRef -----
+  let thetaRef =
+    guiParams.pP * cartPositionError - guiParams.pD * cartVelocityError;
+  if (!guiParams.enabledP) thetaRef = 0;
 
-  const epos = xRef - car.pos;
+  const maxTheta = (15 * Math.PI) / 180;
+  thetaRef = Math.max(-maxTheta, Math.min(maxTheta, thetaRef));
 
-  const evel = car.vel;
+  const angleError = normalizedTheta - thetaRef;
+  const angleVelError = cart.thetaVel;
 
-  let angleRef = guiParams.pP * epos - guiParams.pD * evel;
-  if (!guiParams.enabledP) angleRef = 0;
+  let gravityCompensation =
+    (cart.pendulumMass + cart.cartMass) *
+    g *
+    tan(wrapToMinusPiToPi(cart.theta));
 
-  const maxAngle = (15 * Math.PI) / 180;
-  angleRef = Math.max(-maxAngle, Math.min(maxAngle, angleRef));
+  let balanceU = guiParams.aP * angleError + guiParams.aD * angleVelError;
+  balanceU += gravityCompensation;
+  if (!guiParams.enabledA || CONTROL_MODE == controlModes.dampen) balanceU = 0;
 
-  // ----- INNER LOOP: angle PD → force -----
+  balanceU = constrain(balanceU, -maxControlActionForce, maxControlActionForce);
 
-  const angle = toMinusPiToPi(car.angle);
-  const angVel = car.angVel;
+  let thetaDownRef = atan(cartPositionError * 0.001 - cartVelocityError * 0.05);
 
-  const ea = angle - angleRef;
-  const ed = angVel;
+  // let dampenU = -thetaDown * 5 - cart.thetaVel *(
+  let dampenU = -(thetaDown - thetaDownRef) * 5 - cart.thetaVel * 50;
+  if (abs(thetaDown) >= PI / 2) dampenU = 0;
+  if (!guiParams.enabledDamping) dampenU = 0;
 
-  let u = guiParams.aP * ea + guiParams.aD * ed;
-  if (!guiParams.enabledA || pendulumFell) u = 0;
+  let finalControlAction = 0;
 
-  car.applyForce(u);
+  switch (CONTROL_MODE) {
+    case controlModes.balance:
+      finalControlAction = balanceU;
+      break;
+    case controlModes.dampen:
+      finalControlAction = dampenU;
+      break;
+  }
 
-  car.update();
+  cart.applyForce(finalControlAction);
+  cart.update();
   strokeWeight(1.5);
-  car.show();
+  cart.show();
 
-  infoParams.angle = car.angle;
-  infoParams.angVel = car.angVel;
-  infoParams.angAcc = car.angAcc;
-  infoParams.pos = car.pos;
-  infoParams.vel = car.vel;
-  infoParams.acc = car.acc;
+  drawArrow(
+    cart.cartCenter,
+    createVector(finalControlAction * 10, 0),
+    "#e89b00ff"
+  );
 
-  if (mouseY > 300 && mouseY < groundLevel && !settingSP) {
-    let f = mouseX > car.pos ? 3 : -3;
+  push();
+  noStroke();
+  textStyle("bold");
+  fill("#e89b00ff");
+  text("Control force: " + finalControlAction.toFixed(2), 15, 150);
+  textStyle("normal");
+
+  fill("#ffffff");
+  text(
+    "Max angle: " + (maxAngleBeforeOverload * (180 / PI)).toFixed(2),
+    15,
+    180
+  );
+  pop();
+
+  infoParams.angle = cart.theta;
+  infoParams.angVel = cart.thetaVel;
+  infoParams.angAcc = cart.thetaAcc;
+  infoParams.pos = cart.x;
+  infoParams.vel = cart.xVel;
+  infoParams.acc = cart.xAcc;
+
+  if (mouseY > 300 && mouseY < groundY && !settingSetpoint) {
+    let mouseForce = mouseX > cart.x ? 3 : -3;
     drawArrow(
-      createVector(car.pos, groundLevel - car.wheelRadius - car.cartHeight / 2),
-      createVector(f * 30, 0),
+      createVector(cart.x, groundY - cart.wheelRadius - cart.cartHeight / 2),
+      createVector(mouseForce * 30, 0),
       "#ff000050",
       20
     );
     if (mouseIsPressed) {
-      car.applyForce(f);
+      cart.applyForce(mouseForce);
 
       drawArrow(
-        createVector(
-          car.pos,
-          groundLevel - car.wheelRadius - car.cartHeight / 2
-        ),
-        createVector(f * 30, 0),
+        createVector(cart.x, groundY - cart.wheelRadius - cart.cartHeight / 2),
+        createVector(mouseForce * 30, 0),
         "#ff0000",
         20
       );
     }
-    mouseY > car.pos
+    mouseY > cart.x
       ? (document.documentElement.style.cursor = "pointer")
       : (document.documentElement.style.cursor = "pointer");
-  } else if (mouseY > groundLevel + 10 && mouseY < groundLevel + 30) {
-    document.documentElement.style.cursor = "pointer";
+  } else if (mouseY > groundY + 10 && mouseY < groundY + 30) {
+    if (abs(mouseX - xRef) < sliderPinHeadSize) {
+      document.documentElement.style.cursor = "grab";
+    } else {
+      document.documentElement.style.cursor = "pointer";
+    }
   } else {
     document.documentElement.style.cursor = "auto";
   }
 }
 
 function mousePressed() {
-  mouseY > groundLevel + 10 && mouseY < groundLevel + 30
-    ? (settingSP = true)
-    : (settingSP = false);
+  mouseY > groundY + 10 && mouseY < groundY + 30
+    ? (settingSetpoint = true)
+    : (settingSetpoint = false);
 }
 
 function mouseReleased() {
-  settingSP = false;
+  settingSetpoint = false;
 }
 
 function drawArrow(base, vec, myColor, arrowSize = 7) {
@@ -415,14 +508,27 @@ function drawArrow(base, vec, myColor, arrowSize = 7) {
   translate(base.x, base.y);
   line(0, 0, vec.x, vec.y);
   rotate(vec.heading());
-  translate(vec.mag() - arrowSize, 0);
-  triangle(0, arrowSize / 2, 0, -arrowSize / 2, arrowSize, 0);
+  const len = vec.mag();
+  const head = min(arrowSize, len * 0.8);
+  translate(len - head, 0);
+  triangle(0, head / 2, 0, -head / 2, head, 0);
   pop();
 }
 
-function resetCart() {
-  car;
-}
+// function drawArrow(base, vec, myColor, arrowSize = 70) {
+//   push();
+//   stroke(myColor);
+//   strokeWeight(3);
+//   fill(myColor);
+//   translate(base.x, base.y);
+//   line(0, 0, vec.x, vec.y);
+//   rotate(vec.heading());
+//   translate(vec.mag() - arrowSize, 0);
+//   triangle(0, arrowSize / 2, 0, -arrowSize / 2, arrowSize, 0);
+//   pop();
+// }
 
-const toMinusPiToPi = (x) =>
-  x - 2 * Math.PI * Math.floor((x + Math.PI) / (2 * Math.PI));
+function resetCart() {}
+
+const wrapToMinusPiToPi = (value) =>
+  value - 2 * Math.PI * Math.floor((value + Math.PI) / (2 * Math.PI));

@@ -6,6 +6,14 @@
     "type": "p5",
     "files": ["sketch.js"]
   },
+        {
+    "title": "Double inverted pendulum on a cart",
+    "desc": "",
+    "folder": "projects/double-inverted-pendulum",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "hidden": true
+  },
     {
     "title": "6DOF Antropomorphic robot",
     "desc": "using Jacobian-based iterative inverse kinematics",
