@@ -54,18 +54,105 @@ class Cart {
     this.thetaAcc =
       ((M + m) * g * s -
         m * l * thetaVel ** 2 * s * c -
-        controlInput * c -
+        (M + m) * this.xAcc * c -
         bth * thetaVel) /
       (l * denom);
 
-    this.xVel += this.xAcc * 0.9;
+    this.xVel += this.xAcc;
     this.x += this.xVel;
 
-    this.thetaVel += this.thetaAcc * 0.9;
+    this.thetaVel += this.thetaAcc;
     this.theta += this.thetaVel;
 
-    this.xAcc = 0;
-    this.velAcc = 0;
+    this.controlInput = 0;
+  }
+
+  updateRK(dt = 1 / 60) {
+    const u = this.controlInput;
+    const m = this.pendulumMass;
+    const M = this.cartMass;
+    const l = this.pendulumLength;
+    const g = this.g;
+    const bx = this.cartFriction ?? 0;
+    const bth = this.pendulumFriction ?? 0;
+
+    // state = [x, xVel, theta, thetaVel]
+    const deriv = (state) => {
+      const x = state[0];
+      const xVel = state[1];
+      const th = state[2];
+      const thVel = state[3];
+
+      const s = Math.sin(th);
+      const c = Math.cos(th);
+      const denom = M + m * s * s;
+
+      const xAcc =
+        (u - bx * xVel + m * l * s * thVel * thVel - m * g * s * c) / denom;
+
+      const thAcc =
+        ((M + m) * g * s -
+          m * l * thVel * thVel * s * c -
+          (M + m) * xAcc * c -
+          bth * thVel) /
+        (l * denom);
+
+      return [xVel, xAcc, thVel, thAcc];
+    };
+
+    const s0 = [this.x, this.xVel, this.theta, this.thetaVel];
+
+    const k1 = deriv(s0);
+
+    const s1 = [
+      s0[0] + (dt / 2) * k1[0],
+      s0[1] + (dt / 2) * k1[1],
+      s0[2] + (dt / 2) * k1[2],
+      s0[3] + (dt / 2) * k1[3],
+    ];
+    const k2 = deriv(s1);
+
+    const s2 = [
+      s0[0] + (dt / 2) * k2[0],
+      s0[1] + (dt / 2) * k2[1],
+      s0[2] + (dt / 2) * k2[2],
+      s0[3] + (dt / 2) * k2[3],
+    ];
+    const k3 = deriv(s2);
+
+    const s3 = [
+      s0[0] + dt * k3[0],
+      s0[1] + dt * k3[1],
+      s0[2] + dt * k3[2],
+      s0[3] + dt * k3[3],
+    ];
+    const k4 = deriv(s3);
+
+    const inv6 = 1 / 6;
+
+    this.x = s0[0] + dt * inv6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]);
+    this.xVel = s0[1] + dt * inv6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+    this.theta = s0[2] + dt * inv6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]);
+    this.thetaVel = s0[3] + dt * inv6 * (k1[3] + 2 * k2[3] + 2 * k3[3] + k4[3]);
+
+    // for info/debug
+    // (optional) recompute accelerations at the new state:
+    const sN = Math.sin(this.theta);
+    const cN = Math.cos(this.theta);
+    const denomN = M + m * sN * sN;
+    this.xAcc =
+      (u -
+        bx * this.xVel +
+        m * l * sN * this.thetaVel * this.thetaVel -
+        m * g * sN * cN) /
+      denomN;
+    this.thetaAcc =
+      ((M + m) * g * sN -
+        m * l * this.thetaVel * this.thetaVel * sN * cN -
+        (M + m) * this.xAcc * cN -
+        bth * this.thetaVel) /
+      (l * denomN);
+
     this.controlInput = 0;
   }
 
@@ -187,7 +274,7 @@ let guiParams = {
   enabledA: true,
   aP: 20,
   aI: 0,
-  aD: 100,
+  aD: 120,
   enabledP: true,
   pP: 0.0001,
   pD: 0.007,
@@ -237,14 +324,22 @@ function setup() {
 
   physicalParamsFolder
     .add(physicalParams, "pendulumFriction")
-    .name("pendulum friction");
+    .name("pendulum friction")
+    .min(0)
+    .max(100);
   physicalParamsFolder
     .add(physicalParams, "cartFriction")
-    .name("cart friction");
+    .name("cart friction")
+    .min(0)
+    .max(0.1);
   physicalParamsFolder
     .add(physicalParams, "pendulumMass")
-    .name("pendulum mass");
-  physicalParamsFolder.add(physicalParams, "cartMass").name("cart mass");
+    .name("pendulum mass")
+    .max(10);
+  physicalParamsFolder
+    .add(physicalParams, "cartMass")
+    .name("cart mass")
+    .max(100);
 
   const enabledAngleCtrl = angleControlFolder
     .add(guiParams, "enabledA")
@@ -338,7 +433,7 @@ function draw() {
 > try changing physical parameters
 > try changing the coefficients
 > toggle whole or just positional regulation
-> toggle damping when pendulum falls
+> toggle damping/control when pendulum falls
     `,
     300,
     30
@@ -361,7 +456,7 @@ function draw() {
   text("Cart velocity: " + cart.xVel.toFixed(2), 15, 120);
   stroke("#ff0000");
   CONTROL_MODE == controlModes.dampen
-    ? text("Pendulum fell", 15, 180 + 30 * 5)
+    ? text("Pendulum fell, reset the cart", 15, 180 + 30)
     : () => {};
   pop();
 
@@ -426,7 +521,10 @@ function draw() {
   }
 
   cart.applyForce(finalControlAction);
-  cart.update();
+  const dt = min(deltaTime / 1000, 0.03);
+  const dtFrames = deltaTime / (1000 / 60);
+  // console.log(dtFrames);
+  cart.updateRK(min(dtFrames, 2));
   strokeWeight(1.5);
   cart.show();
 
