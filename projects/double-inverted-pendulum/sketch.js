@@ -1,9 +1,9 @@
 class InvertedDoublePendulum {
-  constructor(railY) {
+  constructor(railY, startAlpha = 0.1, startBeta = 0) {
     this.railY = railY;
     this.pivotOffsetY = -20;
 
-    this.carriageMass = 1000; // M
+    this.carriageMass = 10; // M
     this.alphaPendulumMass = 1; // m1
     this.alphaPendulumLength = 100; // l1
     this.betaPendulumMass = 1; // m2
@@ -16,13 +16,44 @@ class InvertedDoublePendulum {
     this.xdot = 0;
     this.xddot = 0;
 
-    this.alpha = 0.1;
+    this.alpha = startAlpha;
     this.alphaDot = 0;
     this.alphaDDot = 0;
 
-    this.beta = 0;
+    this.beta = startBeta;
     this.betaDot = 0;
     this.betaDDot = 0;
+
+    this.externalForce = 0;
+  }
+
+  get centerY() {
+    return this.railY + this.pivotOffsetY;
+  }
+
+  get alphaNorm() {
+    let a = this.alpha % (2 * Math.PI);
+    if (a > Math.PI) a -= 2 * Math.PI;
+    if (a < -Math.PI) a += 2 * Math.PI;
+    return a;
+  }
+
+  get betaNorm() {
+    let b = this.beta % (2 * Math.PI);
+    if (b > Math.PI) b -= 2 * Math.PI;
+    if (b < -Math.PI) b += 2 * Math.PI;
+    return b;
+  }
+
+  get betaNormGlobal() {
+    let b = (this.alpha + this.beta) % (2 * Math.PI);
+    if (b > Math.PI) b -= 2 * Math.PI;
+    if (b < -Math.PI) b += 2 * Math.PI;
+    return b;
+  }
+
+  applyForce(F) {
+    this.externalForce += F / this.carriageMass;
   }
 
   // numerický krok – dt v sekundách
@@ -33,6 +64,9 @@ class InvertedDoublePendulum {
     const l1 = this.alphaPendulumLength;
     const l2 = this.betaPendulumLength;
     const g = this.g;
+
+    const F = this.externalForce || 0;
+    this.externalForce = 0;
 
     // pravá strana ODE: dy/dt = f(y)
     const derivs = (y) => {
@@ -71,7 +105,7 @@ class InvertedDoublePendulum {
       const A22 = l2 * l2 * m2;
 
       // pravá strana A * ddq = rhs  (bez vnější síly do vozíku)
-      const rhs0 =
+      let rhs0 =
         da *
           (da * l1 * m1 * sa +
             m2 * (da * l1 * sa + da * l2 * s2 + db * l2 * s2)) +
@@ -83,6 +117,8 @@ class InvertedDoublePendulum {
         g * l2 * m2 * s2;
 
       const rhs2 = l2 * m2 * (-da * da * l1 * sb + g * s2);
+
+      rhs0 += F;
 
       // řešení 3×3 soustavy A * ddq = rhs (Gauss)
       let a00 = A00,
@@ -202,14 +238,56 @@ class InvertedDoublePendulum {
   }
 }
 
-const railY = 400;
+class PID {
+  constructor(idp) {
+    this.idp = idp;
+    this.alphaSP = 0;
+    this.betaSP = 0;
+
+    this.lastU = 0;
+  }
+
+  calculateErrors() {
+    this.alphaError = this.alphaSP - this.idp.alphaNorm;
+    this.betaError = this.betaSP - this.idp.betaNorm;
+  }
+
+  update() {}
+
+  get controlAction() {
+    this.calculateErrors();
+
+    this.lastU = -5000 * this.alphaError + 5000 * this.idp.alphaDot;
+    this.lastU -= 500 * this.betaError - 50 * this.idp.betaDot;
+
+    return this.lastU;
+  }
+}
+
+const railY = 300;
 
 let idp;
+
+let pid;
+
+let pens = [];
 
 function setup() {
   createCanvas(1000, 500);
 
-  idp = new InvertedDoublePendulum(railY);
+  idp = new InvertedDoublePendulum(railY, 0.01, 0.01);
+
+  pid = new PID(idp);
+
+  for (let i = 0; i < 10; i++) {
+    pens.push(
+      new InvertedDoublePendulum(
+        railY,
+        0.1 + i * 0.00000002,
+        0 + i * 0.00000002
+      )
+    );
+  }
 }
 
 function draw() {
@@ -220,6 +298,38 @@ function draw() {
   line(0, railY, width, railY);
 
   const dt = deltaTime / 100; // p5.js – ms -> s
+  let force = 0;
+  if (mouseIsPressed) {
+    force = map(mouseX - idp.x, -width / 2, width / 2, -1000, 1000);
+    idp.applyForce(force);
+  }
+  idp.applyForce(pid.controlAction);
   idp.update(dt);
   idp.show();
+
+  drawArrow(
+    createVector(idp.x, idp.centerY),
+    createVector(force * 0.1, 0),
+    "red"
+  );
+
+  // for (let p of pens) {
+  //   p.update(dt);
+  //   p.show();
+  // }
+}
+
+function drawArrow(base, vec, myColor, arrowSize = 7) {
+  push();
+  stroke(myColor);
+  strokeWeight(3);
+  fill(myColor);
+  translate(base.x, base.y);
+  line(0, 0, vec.x, vec.y);
+  rotate(vec.heading());
+  const len = vec.mag();
+  const head = min(arrowSize, len * 0.8);
+  translate(len - head, 0);
+  triangle(0, head / 2, 0, -head / 2, head, 0);
+  pop();
 }

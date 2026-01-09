@@ -14,6 +14,14 @@
     "files": ["sketch.js"],
     "hidden": true
   },
+        {
+    "title": "Soft body physics",
+    "desc": "",
+    "folder": "projects/mass-spring-system",
+    "type": "p5",
+    "files": ["sketch.js"],
+    "hidden": true
+  },
     {
     "title": "6DOF Antropomorphic robot",
     "desc": "using Jacobian-based iterative inverse kinematics",
