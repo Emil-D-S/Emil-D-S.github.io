@@ -408,6 +408,7 @@ main.content {
 /* =========================================
    VIEW TOGGLE BUTTONS
 ========================================= */
+
 .view-toggle {
   display: flex;
   gap: 0.75rem;
@@ -416,67 +417,45 @@ main.content {
 
 .view-toggle i {
   cursor: pointer;
-  font-size: 1.2rem;
   color: var(--accent);
   transition:
     color 0.2s,
     transform 0.2s;
 }
 
+.view-toggle i#listView {
+  font-size: 1.7rem;
+}
+
+.view-toggle i#cardView {
+  font-size: 1.2rem;
+}
+
 .view-toggle i.active {
   color: #fff;
-  transform: scale(1.2);
+  transform: scale(1.3);
 }
 
 /* =========================================
    PROJECT GRID (CARD & LIST VIEWS)
 ========================================= */
 
-/* základ */
-.project .img-link {
-  display: block;
-  line-height: 0;
-  image-rendering: crisp-edges;
-}
-.project .img-link img {
-  width: 100%;
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  border-radius: 8px;
-  transition:
-    transform 200ms ease,
-    filter 200ms ease;
+article.project {
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  backdrop-filter: blur(100px);
 }
 
-/* podtrhni titulek, když je hover na OBRÁZKU */
-.project:has(.img-link:hover) .projectInfo a {
-  text-decoration: underline;
+.card:has(> article.project) article.project {
+  border-radius: 16px;
+  corner-shape: bevel;
 }
 
-/* zvýrazni obrázek, když je hover na ODKAZU v titulku */
-.project:has(.projectInfo a:hover) .img-link img {
-  transform: scale(1.04);
-  filter: brightness(1.03);
+.list:has(> article.project) article.project {
+  border-radius: 16px;
+  corner-shape: bevel;
 }
 
-/* běžné hover efekty (každý sám za sebe) */
-.project .projectInfo a:hover {
-  text-decoration: underline;
-}
-.project .img-link:hover img {
-  transform: scale(1.04);
-  filter: brightness(1.03);
-}
-
-/* přidej i klávesovou navigaci */
-.project:has(.img-link:focus-visible) .projectInfo a {
-  text-decoration: underline;
-}
-.project:has(.projectInfo a:focus-visible) .img-link img {
-  transform: scale(1.04);
-}
-
-/* CARD VIEW: mřížka s max šířkou 200 px na kartu, vlevo */
 #projectGrid.card {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(0, 300px));
@@ -507,26 +486,27 @@ main.content {
   flex-direction: row;
   align-items: stretch;
   gap: 1rem;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.5;
   width: 100%;
   max-width: none; /* zruší globální limity */
 }
 
 #projectGrid.list .project img {
+  display: block;
   width: 160px;
   aspect-ratio: 16 / 9;
   height: auto; /* ne height:100% */
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
+  corner-shape: bevel;
   flex-shrink: 0;
-  margin-bottom: 0;
 }
 
 #projectGrid.list .project .projectInfo {
   display: flex;
   flex-direction: column;
-  flex: 1; /* vyplní zbytek řádku */
-  min-width: 0; /* dovolí zabalit/ellipsis text */
+  flex: 1;
+  min-width: 0;
 }
 
 /* Obrázek v card view */
@@ -535,7 +515,8 @@ main.content {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
+  corner-shape: bevel;
 }
 
 #projectGrid.card .project img:hover {

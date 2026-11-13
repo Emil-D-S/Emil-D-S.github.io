@@ -12,6 +12,9 @@ if (!(canvas instanceof HTMLCanvasElement)) {
       { x: 0.2, y: 0.25, phase: 0, color: "rgba(70, 90, 255, 0.35)" },
       { x: 0.8, y: 0.35, phase: 2, color: "rgba(0, 190, 170, 0.28)" },
       { x: 0.5, y: 0.8, phase: 4, color: "rgba(190, 70, 220, 0.25)" },
+      // { x: 0.2, y: 0.25, phase: 0, color: "rgba(255, 70, 70, 0.35)" },
+      // { x: 0.8, y: 0.35, phase: 2, color: "rgba(0, 255, 34, 0.55)" },
+      // { x: 0.5, y: 0.8, phase: 4, color: "rgba(62, 242, 116, 0.37)" },
     ];
 
     let width = 0;

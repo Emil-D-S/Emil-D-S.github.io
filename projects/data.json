@@ -118,7 +118,7 @@
   },
 
   {
-    "title": "Pool prediction simulator WIP",
+    "title": "Pool prediction WIP",
     "desc": "",
     "folder": "projects/ball-collision-prediction",
     "type": "p5",
@@ -131,7 +131,7 @@
     "desc": "Simple inverse kinematics of Scara robot",
     "folder": "projects/scara-robot-IK",
     "type": "three",
-    "files": ["sketch.js"],
+    "files": [{ "name": "sketch.js", "type": "module" }],
     "image": "projects/scara-robot-IK/preview.png"
   }
 ]
